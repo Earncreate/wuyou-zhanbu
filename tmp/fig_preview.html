@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>卦象图美术预览</title>
+<link rel="stylesheet" href="../libs/app.css">
+<style>
+  body{margin:0;padding:18px;background:#FBF7F0;color:#3A332B;font-family:"Songti SC",serif}
+  h3{font-size:15px;margin:18px 0 8px;color:#8a6d1f;font-weight:600}
+  .row{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap}
+  .box{background:#FFFDF9;border:1px solid #EFE8DB;border-radius:10px;padding:12px 14px}
+  .box .cap{font-size:12px;color:#7a7060;margin-bottom:8px}
+  .figs{display:flex;align-items:center;justify-content:center;gap:14px;padding:6px 0}
+  .tip{font-size:12px;color:#7a7060;line-height:1.8;margin-top:10px}
+</style>
+</head>
+<body>
+<h3>卦象图 · 新美术（上/下卦中缝 + 动爻朱砂框与 ○×）</h3>
+<div id="wrap" class="row"></div>
+<div class="tip">
+  说明：爻线保持墨色渐变；动爻改为朱砂细框 + 淡朱底 + 右侧传统记号（○ 阳动、× 阴动），不再整根涂红。<br>
+  上卦（外，四五六爻）与下卦（内，一二三爻）之间拉开间距并画一条虚线中缝，内外卦一眼可分。
+</div>
+<script>
+// 样例：six 数组自下而上（index 0 = 初爻），1 阳 0 阴
+function fig(six, moving, showMark) {
+  var rev = six.slice().reverse();
+  var rows = rev.map(function (b, i) {
+    var idx = 5 - i;
+    var isMv = (moving || []).indexOf(idx) >= 0;
+    var bars = b ? '<i class="ln yang"></i>' : '<i class="ln yin"></i><i class="ln yin"></i>';
+    return '<div class="fig-y' + (isMv ? ' mv' : '') + '">' +
+      '<span class="fig-bars">' + bars + '</span>' +
+      '<span class="fig-mk">' + (isMv ? (b ? '○' : '×') : '') + '</span></div>';
+  });
+  return '<div class="fig"><div class="fig-tri">' + rows.slice(0, 3).join('') +
+    '</div><div class="fig-sep"></div><div class="fig-tri">' + rows.slice(3).join('') + '</div></div>';
+}
+var cases = [
+  { n: '地雷复（初爻阳动）', six: [1,0,0,0,0,0], mv: [0] },
+  { n: '水火既济（三爻阴动）', six: [1,0,1,0,1,0], mv: [2] },
+  { n: '乾为天（静卦）', six: [1,1,1,1,1,1], mv: [] },
+  { n: '天雷无妄（多爻动）', six: [1,0,0,1,1,1], mv: [0, 3] }
+];
+document.getElementById('wrap').innerHTML = cases.map(function (c) {
+  return '<div class="box"><div class="cap">' + c.n + '</div>' + fig(c.six, c.mv) + '</div>';
+}).join('');
+</script>
+</body>
+</html>

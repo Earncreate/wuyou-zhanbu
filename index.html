@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>无忧占卜 · 六爻生活占</title>
+<script src="libs/lunar.js"></script>
+<script src="libs/liuyao.js"></script>
+<script src="libs/prompts.js"></script>
+<script src="libs/symbol_dict.js"></script>
+<script src="libs/config.js"></script>
+<script src="libs/cloud.config.js"></script>
+<script src="libs/api.js"></script>
+<link rel="stylesheet" href="libs/app.css">
+<style>
+  /* 历史浮动按钮 + 侧滑抽屉 */
+  .fab-history{position:fixed;top:12px;right:12px;z-index:60;display:flex;align-items:center;gap:6px;
+    background:linear-gradient(135deg,#b8860b,#8a6d1f);color:#fff;border:none;border-radius:22px;
+    padding:8px 14px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.25);cursor:pointer}
+  .fab-history .badge{background:#fff;color:#8a6d1f;border-radius:10px;padding:0 6px;font-size:11px;font-weight:700}
+  .drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70;opacity:0;visibility:hidden;transition:opacity .25s}
+  .drawer-mask.show{opacity:1;visibility:visible}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:86%;max-width:380px;background:#fff;z-index:71;
+    transform:translateX(100%);transition:transform .28s ease;display:flex;flex-direction:column;
+    box-shadow:-6px 0 20px rgba(0,0,0,.2)}
+  .drawer.show{transform:translateX(0)}
+  .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+    border-bottom:1px solid #eee;background:#fff;flex:0 0 auto}
+  .dh-title{font-size:16px;font-weight:700}
+  .dh-actions{display:flex;gap:14px;align-items:center}
+  .dh-clear{color:#c0392b;font-size:13px;cursor:pointer}
+  .dh-btn{color:#8a6d1f;font-size:13px;cursor:pointer}
+  .dh-btn:hover{color:#b08d57}
+  .dh-close{font-size:18px;color:#888;cursor:pointer;line-height:1}
+  .drawer-body{overflow-y:auto;flex:1;padding:10px 12px 24px;-webkit-overflow-scrolling:touch}
+  .cat{margin-bottom:10px;border:1px solid #eee;border-radius:10px;overflow:hidden}
+  .cat-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f7f3e8;cursor:pointer;user-select:none}
+  .cat-head .ci{font-size:16px}
+  .cat-head .cn{flex:1;font-weight:600;font-size:14px}
+  .cat-head .cc{background:var(--mc,#b8860b);color:#fff;border-radius:10px;padding:0 7px;font-size:11px}
+  .cat-head .chev{transition:transform .2s;color:#888;transform:rotate(90deg)}
+  .cat:not(.open) .chev{transform:rotate(0deg)}
+  .cat-body{display:block}
+  .cat:not(.open) .cat-body{display:none}
+</style>
+<style>
+  /* 排盘卡人性化增强：结果前置 / 静卦单列 / 空破徽章 / 折叠 */
+  .gist{font-size:13px;line-height:1.65;color:#3A332B;background:#FFF7E8;border:1px solid #F0DDB5;border-radius:10px;padding:10px 12px;margin:6px 0}
+  .gist b{color:#8a6d1f}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin:8px 2px 2px;font-size:11px;color:#7a7060}
+  .legend .lg{display:flex;align-items:center;gap:4px}
+  .legend .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .fold{border:1px solid var(--line);border-radius:8px;background:#FFFDF9;margin-top:8px;padding:0}
+  .fold>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:#5a5040;list-style:none;user-select:none}
+  .fold>summary::-webkit-details-marker{display:none}
+  .fold>summary:before{content:'▸ ';color:#b8860b;font-size:11px}
+  .fold[open]>summary:before{content:'▾ '}
+  .fold .fold-body{padding:4px 12px 12px;font-size:12px;color:var(--txt2);line-height:1.9}
+  .c-badges{display:inline-flex;gap:3px;flex:none;align-items:center;margin-left:auto}
+  .c-tag-empty{visibility:hidden}
+  .c-b{overflow:hidden}
+  .badge{font-size:9px;line-height:1;padding:2px 4px;border-radius:999px;border:1px solid;white-space:nowrap}
+  .badge.kong{color:#854F0B;background:#FAEEDA;border-color:#D9A441}
+  .badge.po{color:#A32D2D;background:#FCEBEB;border-color:#E2A0A0}
+  .badge.dong{color:#7a3fb0;background:#F3E9FB;border-color:#CDA6E6}
+  .badge.wang{color:#0F6E56;background:#E1F5EE;border-color:#7FCBB0}
+  /* 出生信息（出生日期 + 性别）常驻选填 */
+  .birth-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:6px 0 2px}
+  .birth-field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#7a7066}
+  .birth-field input[type=date]{box-sizing:border-box;min-width:160px;padding:9px 10px;font-size:14px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--txt)}
+  .sex-pick{display:flex;gap:16px;align-items:center;padding:8px 14px;background:#faf6f0;border:1px solid #e7ddcf;border-radius:10px}
+  .sex-pick label{display:flex;align-items:center;gap:5px;font-size:14px;cursor:pointer;color:var(--txt)}
+  .sex-pick input{width:16px;height:16px;accent-color:#b8860b}
+</style>
+<style>
+  /* ============ 起卦之法 · 国风面板 ============ */
+  .cast-wrap{margin:14px 2px 4px}
+  .cast-label{display:flex;align-items:baseline;gap:8px;font-family:"KaiTi","STKaiti","Noto Serif SC",serif;font-size:15px;font-weight:700;color:#5a4632;letter-spacing:3px;margin:0 2px 8px}
+  .cast-label:before{content:'☰';color:#A32D2D;font-size:14px}
+  .cast-label-sub{font-size:10px;color:#a4937a;letter-spacing:1px;font-weight:400}
+  .cast-panel{position:relative;background:linear-gradient(160deg,#FDF9EF,#F6EDD8);border:1px solid #C9A86A;border-radius:10px;padding:12px 12px 10px;box-shadow:0 2px 8px rgba(90,70,50,.08)}
+  .cast-panel:before,.cast-panel:after{content:'';position:absolute;width:13px;height:13px;border-color:#A32D2D;border-style:solid;opacity:.7}
+  .cast-panel:before{top:5px;left:5px;border-width:2px 0 0 2px;border-radius:2px 0 0 0}
+  .cast-panel:after{bottom:5px;right:5px;border-width:0 2px 2px 0;border-radius:0 0 2px 0}
+  .cast-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  @media (max-width:359px){.cast-grid{grid-template-columns:repeat(2,1fr)}}
+  .cast-btn{appearance:none;border:1px solid #D3BC8D;background:linear-gradient(180deg,#FFFDF6,#F8F0DC);border-radius:8px;padding:8px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:transform .15s,box-shadow .15s;font-family:"KaiTi","STKaiti","Noto Serif SC",serif;box-shadow:0 1px 2px rgba(90,70,50,.10)}
+  .cast-btn .cb-ico{font-size:15px;line-height:1.15;color:#A32D2D}
+  .cast-btn .cb-name{font-size:13px;font-weight:700;letter-spacing:2px;color:#4a3b28}
+  .cast-btn .cb-sub{font-size:9px;color:#a4937a;letter-spacing:1px}
+  .cast-btn:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(90,70,50,.16);border-color:#C9A86A}
+  .cast-btn.on{background:linear-gradient(160deg,#A32D2D,#7E1F1C);border-color:#7E1F1C;box-shadow:inset 0 0 0 1.5px rgba(255,244,220,.55),0 2px 6px rgba(126,31,28,.35)}
+  .cast-btn.on .cb-ico,.cast-btn.on .cb-name{color:#FFF6E3}
+  .cast-btn.on .cb-sub{color:#EBD5A8}
+  .cast-body{margin-top:10px;font-family:"KaiTi","STKaiti","Noto Serif SC",serif;color:#4a3b28;font-size:13px}
+  .cast-principle{margin-top:8px;padding:8px 10px;background:rgba(163,45,45,.05);border-left:3px solid #C9A86A;border-radius:0 6px 6px 0;font-size:11px;line-height:1.8;color:#7a6a52}
+  .cast-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+  .cast-row label{font-size:12px;color:#7a6a52;letter-spacing:1px;flex:none}
+  .cast-input{width:110px;padding:7px 9px;border:1px solid #D3BC8D;border-radius:8px;background:#FFFDF6;font-family:inherit;font-size:14px;color:#4a3b28;box-sizing:border-box}
+  .cast-input:focus{outline:none;border-color:#A32D2D;box-shadow:0 0 0 2px rgba(163,45,45,.12)}
+  .cast-select{max-width:150px;padding:7px 6px;border:1px solid #D3BC8D;border-radius:8px;background:#FFFDF6;font-family:inherit;font-size:13px;color:#4a3b28}
+  .cast-go{appearance:none;border:none;background:linear-gradient(160deg,#A32D2D,#7E1F1C);color:#FFF6E3;font-family:"KaiTi","STKaiti","Noto Serif SC",serif;font-size:14px;font-weight:700;letter-spacing:4px;padding:9px 22px;border-radius:999px;cursor:pointer;box-shadow:0 2px 8px rgba(126,31,28,.35);transition:filter .15s}
+  .cast-go:hover{filter:brightness(1.1)}
+  .cast-go:disabled{opacity:.5;cursor:default}
+  .cast-yao-row{display:flex;align-items:center;gap:6px;margin:4px 0}
+  .cast-yao-row .cy-name{width:30px;font-size:12px;color:#7a6a52;flex:none}
+  .cast-yao-opts{display:flex;gap:4px;flex:1}
+  .cast-yao-opts button{flex:1;appearance:none;border:1px solid #D3BC8D;background:#FFFDF6;border-radius:6px;padding:5px 0;cursor:pointer;font-size:11px;color:#7a6a52;font-family:inherit;white-space:nowrap}
+  .cast-yao-opts button.on{background:#4a3b28;border-color:#4a3b28;color:#FFF6E3}
+  .cast-time-show{font-size:12px;color:#8a7a5e;background:rgba(201,168,106,.14);border-radius:6px;padding:6px 9px;margin:4px 0;line-height:1.7}
+  .cast-online-note{font-size:11px;color:#0F6E56}
+  .cast-online-progress{margin:6px 0;display:flex;flex-direction:column;gap:3px}
+  .cast-online-progress .op-row{font-size:11px;color:#6b5b45;background:rgba(201,168,106,.12);border-radius:5px;padding:4px 8px;line-height:1.6}
+  .cast-online-progress .op-row b{color:#7E1F1C;font-weight:700}
+  .cast-online-progress .op-row i{font-style:normal;color:#8a7a5e}
+</style>
+<style>
+  /* ============ 卦象解读 · 国风文档（大模型输出） ============ */
+  .ai-out{position:relative;background:
+      radial-gradient(circle at 12% 6%, #FFFDF6 0%, transparent 40%),
+      radial-gradient(circle at 90% 94%, #F6EEDC 0%, transparent 42%),
+      linear-gradient(160deg,#FBF6EC,#F4EAD6);
+    border:1px solid #C9A86A;border-radius:14px;padding:16px 16px 14px;margin-top:4px;
+    box-shadow:0 3px 14px rgba(90,70,50,.10);
+    font-family:"KaiTi","STKaiti","Noto Serif SC",serif;color:#3A332B;line-height:1.8;font-size:14.5px}
+  .ai-out:before,.ai-out:after{content:'';position:absolute;width:14px;height:14px;border:2px solid #A32D2D;opacity:.6}
+  .ai-out:before{top:7px;left:7px;border-right:none;border-bottom:none;border-radius:3px 0 0 0}
+  .ai-out:after{bottom:7px;right:7px;border-left:none;border-top:none;border-radius:0 0 3px 0}
+  .jy-verdict{background:linear-gradient(135deg,#FFFDF8,#F7EEDC);border:1px solid #E2C893;border-left:4px solid #A32D2D;
+    border-radius:10px;padding:12px 14px;margin:2px 0 14px;font-size:15.5px;font-weight:700;color:#5a4632;
+    box-shadow:0 2px 8px rgba(150,120,70,.08);line-height:1.7}
+  .jy-verdict .jy-tag{display:inline-block;font-size:11px;color:#fff;background:#A32D2D;padding:2px 10px;border-radius:20px;
+    letter-spacing:2px;margin-bottom:8px;font-weight:400;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+  .jy-h2{font-size:16.5px;font-weight:700;margin:18px 0 9px;padding-left:11px;border-left:4px solid #C9A86A;color:#5a4632;letter-spacing:1px;line-height:1.4}
+  .jy-h2 small{display:block;font-size:11px;color:#a4937a;font-weight:400;letter-spacing:1px;margin-top:2px}
+  .ai-out p{margin:9px 0;line-height:1.85}
+  .ai-out b{color:#A32D2D;font-weight:700}
+  .jy-ok{color:#5f7a4e;font-weight:700}
+  .jy-no{color:#A32D2D;font-weight:700}
+  .jy-ul{list-style:none;margin:9px 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .jy-ul li{background:#FFFDF9;border:1px solid #E8DCC2;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.6;box-shadow:0 1px 3px rgba(90,70,50,.05)}
+  .jy-ul li b{display:block;margin-bottom:3px;font-size:13.5px;color:#A32D2D}
+  @media(max-width:420px){.jy-ul{grid-template-columns:1fr}}
+  .jy-todo{list-style:none;margin:9px 0;padding:0;counter-reset:jy}
+  .jy-todo li{counter-increment:jy;background:#FFFDF9;border:1px solid #E2D4BA;border-radius:12px;
+    padding:11px 14px 11px 46px;margin-bottom:9px;position:relative;font-size:14px;line-height:1.7;box-shadow:0 1px 3px rgba(90,70,50,.05)}
+  .jy-todo li:before{content:counter(jy);position:absolute;left:13px;top:11px;width:22px;height:22px;
+    background:linear-gradient(135deg,#C9A86A,#A8873F);color:#fff;border-radius:50%;font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+  .jy-note{margin-top:16px;padding:11px 14px;background:rgba(201,168,106,.12);border:1px solid #E2D4BA;border-radius:10px;
+    font-size:12.5px;color:#7a6a52;line-height:1.8;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+  .jy-divider{height:1px;background:linear-gradient(90deg,transparent,#C9A86A,transparent);margin:18px 0 6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ 首页 ============ -->
+  <section class="view" id="view-home">
+    <header class="hero">
+      <div class="hero-title">无忧占卜</div>
+      <div class="hero-sub">京房纳甲 · 六爻断生活小事</div>
+      <div class="hero-gz" id="heroGz">——</div>
+    </header>
+    <button class="fab-history" id="btnHistoryFab">📜 历史<span class="badge" id="fabBadge">0</span></button>
+
+    <div class="sec-label">今日想占哪一桩</div>
+    <div class="mod-list" id="modList"></div>
+
+    <div class="sec-label">说明</div>
+    <div class="card note">
+      起卦之法有八：电脑自动（铜钱六摇）、在线真随机（一爻一请 · 六次成卦）、手工指定、时间起卦、单数／双数／汉字起卦（梅花数占字占）、卦名起卦——八法只定卦体与动爻，装卦皆归京房纳甲，《卜筮正宗》月建日辰为纲，用《增删卜易》用神理法推演。
+    </div>
+
+    <div class="pad"></div>
+  </section>
+
+  <!-- ============ 起卦页 ============ -->
+  <section class="view hide" id="view-div">
+    <div class="topbar">
+      <span class="back" data-act="back">‹ 返回</span>
+      <span class="topbar-title" id="divTitle">起卦</span>
+      <span class="topbar-right" id="divReset">重摇</span>
+    </div>
+
+    <div class="card qa" id="qaBox"></div>
+
+    <div class="cast-wrap">
+      <div class="cast-label">起卦之法<span class="cast-label-sub">八法殊途 · 皆归纳甲装卦</span></div>
+      <div class="cast-panel">
+        <div class="cast-grid" id="castGrid">
+          <button class="cast-btn on" data-cast="auto"><span class="cb-ico">䷀</span><span class="cb-name">电脑自动</span><span class="cb-sub">铜钱六摇</span></button>
+          <button class="cast-btn" data-cast="online"><span class="cb-ico">雲</span><span class="cb-name">在线起卦</span><span class="cb-sub">真随机源</span></button>
+          <button class="cast-btn" data-cast="manual"><span class="cb-ico">爻</span><span class="cb-name">手工指定</span><span class="cb-sub">逐爻定老少</span></button>
+          <button class="cast-btn" data-cast="time"><span class="cb-ico">時</span><span class="cb-name">时间起卦</span><span class="cb-sub">年月日时</span></button>
+          <button class="cast-btn" data-cast="num1"><span class="cb-ico">壹</span><span class="cb-name">单数起卦</span><span class="cb-sub">一数定卦</span></button>
+          <button class="cast-btn" data-cast="num2"><span class="cb-ico">貳</span><span class="cb-name">双数起卦</span><span class="cb-sub">两数定上下</span></button>
+          <button class="cast-btn" data-cast="hanzi"><span class="cb-ico">字</span><span class="cb-name">汉字起卦</span><span class="cb-sub">字数分上下</span></button>
+          <button class="cast-btn" data-cast="name"><span class="cb-ico">卦</span><span class="cb-name">卦名起卦</span><span class="cb-sub">本卦变卦</span></button>
+        </div>
+        <div class="cast-body" id="castBody"></div>
+        <div class="cast-principle" id="castPrinciple"></div>
+      </div>
+    </div>
+
+    <div class="toss-stage">
+      <div class="coin-row" id="coinRow">
+        <div class="coin"><span>字</span></div>
+        <div class="coin"><span>字</span></div>
+        <div class="coin"><span>字</span></div>
+      </div>
+      <div class="toss-tip" id="tossTip">心念既定，摇钱起卦</div>
+      <div class="yao-dots" id="yaoDots">
+        <i data-i="0">初</i><i data-i="1">二</i><i data-i="2">三</i><i data-i="3">四</i><i data-i="4">五</i><i data-i="5">上</i>
+      </div>
+      <button class="btn-main" id="btnToss">摇 卦</button>
+      <div class="sub-tip" id="tossSubTip">连摇六次，自下而上成卦</div>
+    </div>
+
+    <div id="chartBox" class="hide"></div>
+    <div class="pad"></div>
+  </section>
+
+  <!-- ============ 解析页 ============ -->
+  <section class="view hide" id="view-res">
+    <div class="topbar">
+      <span class="back" data-act="back">‹ 返回</span>
+      <span class="topbar-title">智能体解析</span>
+      <span class="topbar-right" id="resSwitch">切换</span>
+    </div>
+    <div id="resBox"></div>
+    <div class="pad"></div>
+  </section>
+
+  <!-- ============ 记录/设置 ============ -->
+  <section class="view hide" id="view-set">
+    <header class="hero">
+      <div class="hero-title">设置</div>
+      <div class="hero-sub">配置后可调用大模型做深度解析</div>
+    </header>
+    <!-- 账号 / 云同步：占卜历史与 API Key 存到云端，换设备登录即可取回 -->
+    <div class="card">
+      <div class="form-row" id="rowUser">
+        <label>账号</label>
+        <input id="acctUser" placeholder="用户名（3-24 位字母/数字/下划线）" autocomplete="username">
+      </div>
+      <div class="form-row" id="rowPwd">
+        <label>密码</label>
+        <input id="acctPwd" type="password" placeholder="登录填密码；注册时即为新密码" autocomplete="current-password">
+      </div>
+      <div class="form-row" id="rowInvite">
+        <label>邀请码</label>
+        <input id="acctInvite" placeholder="注册必填，登录不用">
+      </div>
+      <div class="form-row" id="rowCloudBase">
+        <label>服务地址</label>
+        <input id="cloudBase" placeholder="https://你的后端域名（如 xxx.onrender.com）">
+      </div>
+      <div class="tip-line">只有注册/登录/云同步才需要服务地址；不填也能正常起卦、解析，记录和 Key 只存本机。本地演示填 http://127.0.0.1:8123（需先用 server/start.bat 起后端）；正式部署版地址已内置，无需填写。</div>
+      <button class="btn-main" id="btnLogin">登 录</button>
+      <button class="btn-line" id="btnRegister">用邀请码注册</button>
+      <button class="btn-line hide" id="btnSyncNow">立即同步记录</button>
+      <button class="btn-line hide" id="btnLogout">退出登录</button>
+      <div class="tip-line" id="acctState">未登录：记录与 Key 只存本机</div>
+      <div class="tip-line hide" id="adminTip">
+        <a href="stats.html" style="color:var(--red)">打开应验统计</a>
+        <span style="color:var(--txt3)">　看看所有人的反馈与准头（管理员）</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="form-row">
+        <label>服务商</label>
+        <select id="apiPreset">
+          <option value="https://api.deepseek.com/v1|deepseek-chat">DeepSeek（推荐）</option>
+          <option value="https://api.hunyuan.cloud.tencent.com/v1|hy3">腾讯混元 · hy3（混元 V3）</option>
+          <option value="https://api-inference.modelscope.cn/v1|Tencent-Hunyuan/Hy3">魔搭 · 混元 Hy3（免费档）</option>
+          <option value="https://dashscope.aliyuncs.com/compatible-mode/v1|qwen-plus">阿里云百炼 · 通义</option>
+          <option value="https://open.bigmodel.cn/api/paas/v4|glm-4-flash">智谱 GLM</option>
+          <option value="https://api.siliconflow.cn/v1|Qwen/Qwen2.5-72B-Instruct">硅基流动</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>接口地址</label>
+        <input id="apiBase" placeholder="https://api.deepseek.com/v1">
+      </div>
+      <div class="form-row">
+        <label>模型</label>
+        <input id="apiModel" placeholder="deepseek-chat">
+      </div>
+      <div class="form-row">
+        <label>API Key</label>
+        <input id="apiKey" placeholder="sk-..." type="password">
+      </div>
+      <div class="form-row">
+        <label>快速模式</label>
+        <select id="quickMode">
+          <option value="0">关闭（两段完整解析，推荐）</option>
+          <option value="1">开启（跳过总断，顾问一次断卦）</option>
+        </select>
+      </div>
+      <div class="tip-line">Key 存在两处：① 本机浏览器，用于离线直连；② 登录后额外加密存一份到服务端（换设备登录可取回，接口只回掩码、库里只存密文，不参与任何中转调用之外的用途）。解析分两段调用同一个模型：① 六爻助手做卦象总断，② 该模块顾问深化为落地方案。开启快速模式则只跑第二段，省一半时间但断卦深度略降。</div>
+      <button class="btn-main" id="btnSaveKey">保存</button>
+      <div class="tip-line" id="keyState">当前：未配置</div>
+    </div>
+    <div class="card note">
+      浏览器直连大模型接口可能被跨域策略拦截。若在预览页调用失败，请在微信开发者工具中运行配套的 miniprogram 工程（小程序端无跨域限制）。
+    </div>
+    <div class="pad"></div>
+  </section>
+
+  <nav class="tabbar" id="tabbar">
+    <a data-tab="home" class="on"><span>☯</span>占卜</a>
+    <a data-tab="set"><span>⚙</span>设置</a>
+  </nav>
+</div>
+
+<div class="drawer-mask" id="historyMask"></div>
+<aside class="drawer" id="historyDrawer">
+  <div class="drawer-head">
+    <span class="dh-title">起卦记录</span>
+    <span class="dh-actions">
+      <span class="dh-btn" id="drawerExport">导出</span>
+      <span class="dh-btn" id="drawerImport">导入</span>
+      <span class="dh-clear" id="drawerClear">清空</span><span class="dh-close" id="drawerClose">✕</span>
+    </span>
+  </div>
+  <div class="drawer-body" id="historyDrawerBody"></div>
+  <input type="file" id="importFile" accept="application/json,.json" hidden>
+</aside>
+
+<div class="fb-mask" id="fbMask">
+  <div class="fb-box">
+    <div class="fb-title">这一卦后来应验了吗</div>
+    <div class="fb-sub" id="fbSub"></div>
+    <div class="fb-opts" id="fbOpts"></div>
+    <textarea class="fb-note" id="fbNote" placeholder="可选：后来到底发生了什么。会跟卦一起存下来，日后复盘用"></textarea>
+    <input type="hidden" id="fbTarget" value="">
+    <div class="fb-act">
+      <button class="btn-ghost" id="fbCancel">取消</button>
+      <button class="btn-main" id="fbOk">保存反馈</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var LY = window.LiuYao, CFG = window.AppConfig;
+  var $ = function (s) { return document.querySelector(s); };
+  var posName = ['初', '二', '三', '四', '五', '上'];
+  // 在线起卦进度：一爻一请，六次成卦（0 = 尚未起爻，6 = 六爻已满）
+  var onlineStep = 0;
+
+  // ===== 本机存储安全封装（根因修复）=====
+  // 预览面板/沙箱 iframe（sandbox 缺 allow-same-origin）读取 window.localStorage 会抛
+  // SecurityError: Failed to read the 'localStorage' property from 'Window'，
+  // 任何用到它的逻辑都会被打断——此前表现为「点 AI 智能体解析 → 整页空白且无任何提示」。
+  // 此处首次访问失败即退化为内存存储（刷新后不保留），并把真实原因挂到 window 上便于排查。
+  var LS_OK = true, LS_MEM = {}, LS_ERR = null;
+  try { window.localStorage.getItem('__probe__'); } catch (e) { LS_OK = false; LS_ERR = e; }
+  var store = {
+    ok: function () { return LS_OK; },
+    get: function (k) {
+      if (!LS_OK) return (k in LS_MEM) ? LS_MEM[k] : null;
+      try { return window.localStorage.getItem(k); } catch (e) { return (k in LS_MEM) ? LS_MEM[k] : null; }
+    },
+    set: function (k, v) {
+      LS_MEM[k] = String(v);
+      if (!LS_OK) return false;
+      try { window.localStorage.setItem(k, String(v)); return true; }
+      catch (e) { return false; }   // 配额超限：留在内存，不打断流程
+    },
+    remove: function (k) {
+      delete LS_MEM[k];
+      if (!LS_OK) return;
+      try { window.localStorage.removeItem(k); } catch (e) { }
+    }
+  };
+  window.__WY_STORE__ = store;
+
+  var state = {
+    moduleId: null,
+    text: '',
+    chart: null,
+    aiFinal: '',
+    aiStage1: '',
+    tossing: false,
+    raw: [],
+    guaText: '',
+    solarText: '',
+    birthDate: '',
+    birthYearGanZhi: '',
+    gender: '',
+    curRecId: '',        // 当前这卦对应的记录 id（保存或还原后写入），反馈挂在它上面
+    cloudHasKey: false   // 服务端是否存着一把可用的 Key（有则不走本机直连）
+  };
+
+  // ---------- 干支（节气月建 / 日辰） ----------
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function beijingTime(d) {
+    d = d || new Date();
+    var bj = new Date(d.getTime() + (d.getTimezoneOffset() + 480) * 60000);
+    return bj.getFullYear() + '-' + pad2(bj.getMonth() + 1) + '-' + pad2(bj.getDate()) +
+      ' ' + pad2(bj.getHours()) + ':' + pad2(bj.getMinutes()) + ' 北京时间';
+  }
+  function nowGanzhi(d) {
+    d = d || new Date();
+    // 统一以北京时间(UTC+8)定四柱，避免设备时区不同导致时柱/日柱偏差
+    var bj = new Date(d.getTime() + (d.getTimezoneOffset() + 480) * 60000);
+    var lunar = window.Lunar.fromDate(bj);
+    var prev = lunar.getPrevJieQi(), next = lunar.getNextJieQi();
+    return {
+      month: lunar.getMonthInGanZhi(),
+      day: lunar.getDayInGanZhi(),
+      jieqi: prev ? prev.getName() : '',
+      nextJieqi: next ? next.getName() : '',
+      solarText: bj.getFullYear() + '年' + (bj.getMonth() + 1) + '月' + bj.getDate() + '日',
+      lunarText: lunar.getMonthInChinese() + '月' + lunar.getDayInChinese(),
+      beijing: beijingTime(d),
+      ganzhiYear: lunar.getYearInGanZhi(),
+      hour: lunar.getTimeInGanZhi()
+    };
+  }
+
+  // ---------- 通用 ----------
+  function toast(msg) {
+    var t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+  var curView = 'home';
+  var viewStack = [];   // 导航栈：返回按来路回退（起卦→解析→返回回起卦；历史还原→解析→返回回主页）
+  function switchView(id, isBack) {
+    if (!isBack && id !== curView && curView) viewStack.push(curView);
+    curView = id;
+    ['home', 'div', 'res', 'set'].forEach(function (v) {
+      $('#view-' + v).classList.toggle('hide', v !== id);
+    });
+    var fab = $('#btnHistoryFab'); if (fab) fab.style.display = (id === 'home') ? '' : 'none';
+    window.scrollTo(0, 0);
+  }
+  function goBackView() {
+    var prev = viewStack.pop();
+    if (!prev || prev === curView) prev = 'home';
+    switchView(prev, true);
+  }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  // ---------- 首页模块列表 ----------
+  function renderHome() {
+    var g = nowGanzhi();
+    $('#heroGz').textContent = g.ganzhiYear + '年 · 月建' + g.month + ' · 日辰' + g.day + ' · ' + g.jieqi;
+    var html = '';
+    CFG.MOD_GROUPS.forEach(function (grp) {
+      html += '<div class="grp-title">' + esc(grp.name) + '</div>';
+      if (grp.key === 'life') {
+        grp.ids.forEach(function (id) {
+          var m = CFG.MODULES[id];
+          html += '<div class="mod-card" data-mod="' + id + '" style="--mc:' + m.color + ';--mc2:' + m.color2 + '">' +
+            '<div class="mod-icon">' + m.icon + '</div>' +
+            '<div class="mod-body"><div class="mod-name">' + m.name + '</div>' +
+            '<div class="mod-sub">' + m.subtitle + '</div>' +
+            '<div class="mod-desc">' + m.desc + '</div></div>' +
+            '<div class="mod-arrow">›</div></div>';
+        });
+      } else {
+        html += '<div class="chip-grid">';
+        grp.ids.forEach(function (id) {
+          var m = CFG.MODULES[id];
+          html += '<div class="mod-card mod-chip" data-mod="' + id + '" style="--mc:' + m.color + ';--mc2:' + m.color2 + '">' +
+            '<div class="mod-icon">' + m.icon + '</div>' +
+            '<div class="mod-body"><div class="mod-name">' + m.name + '</div>' +
+            '<div class="mod-sub">' + m.subtitle + '</div></div></div>';
+        });
+        html += '</div>';
+      }
+    });
+    $('#modList').innerHTML = html;
+    renderHistory();
+  }
+
+  function getHistory() {
+    try { return JSON.parse(store.get('wy_records') || '[]'); } catch (e) { return []; }
+  }
+  function saveRecord(rec) {
+    var list = getHistory(); list.unshift(rec);
+    if (list.length > 20) list = list.slice(0, 20);
+    store.set('wy_records', JSON.stringify(list));
+  }
+  function recFigHTML(six) {
+    if (!six) return '';
+    return '<div class="rec-fig">' + six.slice().reverse().map(function (b) {
+      return '<i class="rec-ln ' + (b ? 'y' : 'n') + '"></i>';
+    }).join('') + '</div>';
+  }
+  function updateFabBadge(n) {
+    var b = $('#fabBadge'); if (b) b.textContent = n || 0;
+  }
+  function renderHistory() {
+    var list = getHistory();
+    var body = $('#historyDrawerBody');
+    if (!body) return;
+    var order = [];
+    CFG.MOD_GROUPS.forEach(function (g) { g.ids.forEach(function (id) { order.push(id); }); });
+    var mods = [];
+    list.forEach(function (r) { if (r.moduleId && mods.indexOf(r.moduleId) < 0) mods.push(r.moduleId); });
+    mods.sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); });
+    updateFabBadge(list.length);
+    if (!list.length || !mods.length) {
+      body.innerHTML = '<div class="empty">还没有保存的记录，起卦后点「保存此卦」即可存入对应分组</div>' + feedbackStatsHTML();
+      return;
+    }
+    var cats = mods.map(function (id) {
+      var m = CFG.MODULES[id];
+      var recs = [];
+      list.forEach(function (r, i) { if (r.moduleId === id) recs.push({ r: r, i: i }); });
+      var rows = recs.map(function (o) {
+        var r = o.r;
+        // 阳历日期 + 北京时间（不含星期）
+        var bj = r.beijing || '';
+        var bm = bj.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}:\d{2})/);
+        var solarRaw = r.solar ? String(r.solar).replace(/^公历\s*/, '') : '';
+        var solarTxt = solarRaw || (bm ? (bm[1] + '-' + bm[2] + '-' + bm[3]) : '');
+        var bjTxt = bm ? (bm[4] + ' 北京时间') : (bj || '');
+        var f = fbOf(r);
+        return '<div class="rec-row" data-rec="' + o.i + '">' + recFigHTML(r.six || (r.chart && r.chart.ben && r.chart.ben.six)) +
+          '<div class="rec-mid"><b class="rg">' + esc(r.gua) + (r.aiFinal ? '<i class="tag-ai">已存解读</i>' : '') +
+          (f ? '<i class="tag-ai fb-ok">' + esc(fbName(f.level)) + '</i>' : '') + '</b><span class="ra">' + esc(r.text || '（未填写）') + '</span></div>' +
+          '<div class="rt"><span class="rt-s">阳历 ' + esc(solarTxt) + '</span><span class="rt-b">' + esc(bjTxt) + '</span></div>' +
+          '<i class="rec-fb' + (f ? ' on' : '') + '" data-fbopen="' + esc(r.id || ('#' + o.i)) + '">' +
+          (f ? esc(fbName(f.level)) : '反馈') + '</i>' +
+          '<i class="rec-del" data-del="' + o.i + '">✕</i></div>';
+      }).join('');
+      return '<div class="cat open" style="--mc:' + m.color + '"><div class="cat-head" data-cat="' + id + '">' +
+        '<span class="ci">' + m.icon + '</span><span class="cn">' + m.name + '</span>' +
+        '<span class="cc">' + recs.length + '</span><i class="chev">›</i></div>' +
+        '<div class="cat-body">' + rows + '</div></div>';
+    }).join('');
+    body.innerHTML = cats + feedbackStatsHTML();
+  }
+  // 应验统计：反馈挂在记录上，所以直接从记录里统计；口径与服务端 feedback.py 一致
+  function feedbackStatsHTML() {
+    var list = getHistory();
+    var lv = list.map(function (r) { var f = fbOf(r); return f ? +f.level : 0; });
+    var done = lv.filter(Boolean).length;
+    if (!done) {
+      return '<div class="card note">还没有反馈过。事后回来在记录上点一下「反馈」，' +
+        '攒够几十卦就能看出这套断卦在哪些事上真的准。</div>';
+    }
+    var concl = lv.filter(function (x) { return x >= 1 && x <= 4; });   // 未到应期不算数
+    var pos = concl.filter(function (x) { return x >= 2; });
+    var rate = concl.length ? Math.round(pos.length / concl.length * 100) : 0;
+    var d = {};
+    lv.forEach(function (x) { if (x) d[x] = (d[x] || 0) + 1; });
+    var parts = FB_LEVELS.map(function (x) { return x.t + ' ' + (d[x.v] || 0); }).join('、');
+    var cloud = (window.WYCloud && window.WYCloud.authed())
+      ? '已登录，反馈会同步到云端。' : '未登录时只存本机，登录后自动上传。';
+    return '<div class="card note">我的卦准头：共反馈 ' + done + ' 卦（' + esc(parts) +
+      '）　综合应验率约 ' + rate + '%（未到应期不计入分母）。' + cloud +
+      '只用于事后校准断卦与应期，不构成任何承诺。</div>';
+  }
+  function doSave() {
+    if (!state.chart) return;
+    var m = CFG.MODULES[state.moduleId];
+    var rec = {
+      id: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      moduleId: state.moduleId, modName: m.name, text: state.text || '',
+      gua: state.chart.ben.name + (state.chart.bian ? ' 之 ' + state.chart.bian.name : ''),
+      six: state.chart.ben.six, solar: state.chart.solarText, beijing: state.beijing || beijingTime(),
+      chart: state.chart, raw: state.raw,
+      birthDate: state.birthDate || '', gender: state.gender || '', birthYearGanZhi: state.birthYearGanZhi || '',
+      aiFinal: state.aiFinal || '', aiStage1: state.aiStage1 || '', createdAt: Date.now()
+    };
+    // 本机存储可能写满：依次降级（完整 → 丢总断原文 → 再丢卦象对象），保证解读正文一定留下来
+    var saved = saveRecordSafe(rec);
+    if (!saved) { toast('保存失败：本机存储已满，请先到首页清空部分记录'); return; }
+    if (window.WYCloud) window.WYCloud.markDirty(rec);
+    cloudSyncSoon();
+    state.curRecId = rec.id;   // 结果页的反馈条要挂到刚存的这条上
+    toast('已存入「' + m.name + '」记录' + (rec.aiFinal ? '（含解读）' : '（未含解读）'));
+    var b = $('#btnSave'); if (b) { b.textContent = '已保存 ✓'; b.disabled = true; }
+    renderHistory();
+  }
+  function saveRecordSafe(rec) {
+    var tries = [rec];
+    if (rec.aiStage1) tries.push(Object.assign({}, rec, { aiStage1: '' }));
+    tries.push(Object.assign({}, rec, { aiStage1: '', chart: null }));
+    for (var i = 0; i < tries.length; i++) {
+      try { saveRecord(tries[i]); return true; } catch (e) { /* 配额不足，试下一档 */ }
+    }
+    // 仍失败：清掉旧记录，只保这一卦的解读正文
+    try {
+      var minimal = Object.assign({}, rec, { aiStage1: '', chart: null });
+      var list = getHistory();
+      while (list.length > 5) list.pop();
+      store.set('wy_records', JSON.stringify([minimal].concat(list)));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function restoreRecord(idx) {
+    var rec = getHistory()[idx]; if (!rec) return;
+    state.curRecId = rec.id || '';   // 结果页的反馈条要挂到这条记录上
+    state.moduleId = rec.moduleId; state.text = rec.text || ''; state.chart = rec.chart; state.beijing = rec.beijing;
+    state.birthDate = rec.birthDate || ''; state.gender = rec.gender || ''; state.birthYearGanZhi = rec.birthYearGanZhi || '';
+    // 记录里若已存过解读，直接复用，避免重复调用大模型
+    state.aiFinal = rec.aiFinal || ''; state.aiStage1 = rec.aiStage1 || '';
+    // 排盘被裁剪（本机存储不足时的保存降级）时，留存可见的卦名与日期，供解析页兜底显示
+    state.guaText = rec.gua || ''; state.solarText = rec.solar || rec.beijing || '';
+    renderDivination();
+    if (rec.raw) {
+      state.raw = rec.raw; drawDots(rec.raw);
+      $('#tossTip').textContent = '成卦：' + (state.chart && state.chart.ben ? state.chart.ben.name : '');
+    }
+    if (state.chart) renderChart(state.chart);
+    // 记录里存过解读就直接进结果页看解读；否则进起卦页
+    if (rec.aiFinal) { switchView('res'); renderResult(); toast('已还原该卦的解读'); }
+    else switchView('div');
+  }
+  $('#historyDrawerBody').addEventListener('click', function (e) {
+    var del = e.target.closest('.rec-del');
+    if (del) {
+      var di = +del.dataset.del;
+      var list = getHistory();
+      // 删除也要进同步队列，否则下次同步会被服务端那份「还在」的记录顶回来
+      if (list[di] && window.WYCloud) window.WYCloud.markDirty(list[di], true);
+      list.splice(di, 1);
+      store.set('wy_records', JSON.stringify(list)); renderHistory(); toast('已删除'); cloudSyncSoon();
+      return;
+    }
+    var head = e.target.closest('.cat-head');
+    if (head) { head.parentElement.classList.toggle('open'); return; }
+    // 点的是「反馈」按钮：别顺手把记录打开，交给全局委托去开反馈弹层
+    if (e.target.closest('[data-fbopen]')) return;
+    var row = e.target.closest('.rec-row'); if (!row) return;
+    restoreRecord(+row.dataset.rec); closeDrawer();
+  });
+  function openDrawer() { $('#historyMask').classList.add('show'); $('#historyDrawer').classList.add('show'); }
+  function closeDrawer() { $('#historyMask').classList.remove('show'); $('#historyDrawer').classList.remove('show'); }
+  $('#btnHistoryFab').addEventListener('click', openDrawer);
+  $('#historyMask').addEventListener('click', closeDrawer);
+  $('#drawerClose').addEventListener('click', closeDrawer);
+  $('#drawerClear').addEventListener('click', function () {
+    if (!confirm('确定清空全部记录？')) return;
+    store.remove('wy_records'); renderHistory(); toast('已清空');
+    var c = window.WYCloud;
+    if (c && c.authed()) {
+      c.clearPending();                       // 别把刚清掉的旧记录重新推上去
+      c.wipeRemote().catch(function () { });
+    }
+  });
+  // 导出/导入：把本机记录落盘成 JSON 文件（真正保存），或读回合并
+  function mergeRecords(cur, incoming, overwrite) {
+    var next;
+    if (overwrite) next = incoming.slice();
+    else {
+      var seen = {};
+      cur.concat(incoming).forEach(function (r) { if (r && r.id) seen[r.id] = r; });
+      next = Object.keys(seen).map(function (k) { return seen[k]; });
+    }
+    if (next.length > 200) next = next.slice(0, 200);
+    return next;
+  }
+  window.mergeRecords = mergeRecords;
+  $('#drawerExport').addEventListener('click', function () {
+    var list = getHistory();
+    if (!list.length) { toast('没有可导出的记录'); return; }
+    var payload = { app: 'wyzb', ver: 1, exportedAt: new Date().toISOString(), records: list };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = (window.URL && URL.createObjectURL) ? URL.createObjectURL(blob) : '';
+    var a = document.createElement('a');
+    var d = new Date();
+    var nm = 'wyzb_records_' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '.json';
+    a.href = url || 'data:application/json,' + encodeURIComponent(JSON.stringify(payload));
+    a.download = nm;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    if (url && URL.revokeObjectURL) setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    toast('已导出 ' + list.length + ' 条记录');
+  });
+  $('#drawerImport').addEventListener('click', function () { var el = $('#importFile'); if (el) el.click(); });
+  $('#importFile').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(String(reader.result));
+        var incoming = Array.isArray(data) ? data : (data && Array.isArray(data.records) ? data.records : null);
+        if (!incoming) throw new Error('文件格式不对');
+        var cur = getHistory();
+        var overwrite = confirm('导入 ' + incoming.length + ' 条记录。\n点「确定」＝覆盖现有 ' + cur.length + ' 条\n点「取消」＝合并追加（按 id 去重）');
+        var next = mergeRecords(cur, incoming, overwrite);
+        store.set('wy_records', JSON.stringify(next));
+        renderHistory();
+        toast('已导入 ' + incoming.length + ' 条' + (overwrite ? '（覆盖）' : '（合并）'));
+      } catch (err) { toast('导入失败：' + (err && err.message ? err.message : '解析错误')); }
+      finally { e.target.value = ''; }
+    };
+    reader.readAsText(f);
+  });
+  $('#resBox').addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('#btnSave') : null;
+    if (b) doSave();
+  });
+
+  // ---------- 进入起卦页 ----------
+  $('#modList').addEventListener('click', function (e) {
+    var c = e.target.closest('.mod-card'); if (!c) return;
+    enterModule(c.dataset.mod);
+  });
+  function enterModule(id) {
+    state.moduleId = id; state.text = ''; state.chart = null; state.raw = [];
+    state.aiFinal = ''; state.aiStage1 = ''; state.guaText = ''; state.solarText = '';
+    renderDivination();
+    switchView('div');
+  }
+
+  function renderDivination() {
+    if (!state.moduleId) return;
+    var m = CFG.MODULES[state.moduleId];
+    $('#divTitle').textContent = m.name;
+    var html = '<div class="mod-head" style="--mc:' + m.color + '">' + m.icon + ' ' + m.name +
+      '<div class="mod-head-sub">' + m.subtitle + '</div></div>';
+    html += '<div class="card qa">' +
+      '<div class="q-title">这一卦你想问的具体心事（选填，留空用默认问法）</div>' +
+      '<textarea id="askText" class="ask-text" placeholder="' + esc(CFG.askPlaceholder(state.moduleId)) + '">' + esc(state.text || '') + '</textarea>' +
+      '<div class="q-hint">属性不再由你勾选，将由卦象总断推导后，由模块顾问匹配给出建议。</div>';
+    // 出生信息：仅在「终身运/年运」模块下设置，其它模块一律不显示
+    if (state.moduleId === 'fyear') {
+      html += '<div class="q-title" style="margin-top:12px">求测人信息（仅本模块，选填）</div>';
+      html += '<div class="birth-row">' +
+        '<label class="birth-field"><span>出生日期</span><input id="birthDate" class="ask-text" type="date" min="1900-01-01" max="2100-12-31" value="' + esc(state.birthDate || '') + '"></label>' +
+        '<div class="birth-field"><span>性别</span><div class="sex-pick">' +
+          '<label><input type="radio" name="gender" value="男" ' + (state.gender === '男' ? 'checked' : '') + '>男</label>' +
+          '<label><input type="radio" name="gender" value="女" ' + (state.gender === '女' ? 'checked' : '') + '>女</label>' +
+        '</div></div>' +
+      '</div>';
+      html += '<div class="q-hint">填了出生日期，本模块按「生年纳音」立年命与世爻比根基强弱；不填则按当年太岁论年运。性别仅用于区分男女取用。</div>';
+    }
+    html += '</div>';
+    $('#qaBox').innerHTML = html;
+    var ta = $('#askText');
+    if (ta) { ta.addEventListener('input', function () { state.text = ta.value; state.aiFinal = ''; state.aiStage1 = ''; }); }
+    var bd = $('#birthDate');
+    if (bd) { bd.addEventListener('change', function () { state.birthDate = bd.value; }); }
+    document.querySelectorAll('input[name="gender"]').forEach(function (r) {
+      r.addEventListener('change', function () { if (r.checked) state.gender = r.value; });
+    });
+
+    // 重置摇卦区
+    state.raw = []; onlineStep = 0;
+    $('#yaoDots').querySelectorAll('i').forEach(function (i) { i.className = ''; });
+    $('#tossTip').textContent = '心念既定，摇钱起卦';
+    $('#chartBox').classList.add('hide');
+    $('#chartBox').innerHTML = '';
+    castShow('auto');
+  }
+
+    // 属性不再由用户勾选：无选项点击逻辑
+
+  $('#divReset').addEventListener('click', function () {
+    state.raw = []; state.chart = null; state.aiFinal = ''; state.aiStage1 = '';
+    onlineStep = 0;
+    $('#chartBox').classList.add('hide'); $('#chartBox').innerHTML = '';
+    $('#yaoDots').querySelectorAll('i').forEach(function (i) { i.className = ''; });
+    $('#tossTip').textContent = '心念既定，摇钱起卦';
+    if (CAST.cur === 'online') castShow('online'); // 在线法重摇：按钮与进度一并复位
+  });
+
+  // ---------- 摇卦动画 ----------
+  var COIN_TEXT = { 2: '字', 3: '背' };
+  function shakeCoins(cb) {
+    var coins = $('#coinRow').querySelectorAll('.coin');
+    coins.forEach(function (c) { c.classList.add('rolling'); });
+    var r = LY.tossOnce();
+    setTimeout(function () {
+      coins.forEach(function (c, i) {
+        c.classList.remove('rolling');
+        var back = r.coins[i] === 3;
+        c.classList.toggle('back', back);
+        c.querySelector('span').textContent = COIN_TEXT[r.coins[i]];
+      });
+      cb(r);
+    }, 620);
+  }
+  function drawDots(raw) {
+    var dots = $('#yaoDots').querySelectorAll('i');
+    dots.forEach(function (d, i) {
+      d.className = raw[i] ? (raw[i].sum === 9 ? 'yang mv' : (raw[i].sum === 7 ? 'yang' : (raw[i].sum === 6 ? 'yin mv' : 'yin'))) : '';
+    });
+  }
+  // ---------- 公共成卦流程（八法皆汇于此：起卦法只定卦体与动爻，装卦归引擎） ----------
+  function finalizeCast() {
+    var m = CFG.MODULES[state.moduleId];
+    var g = nowGanzhi();
+    // 终身/年运：计算出生年干支（立年命），并标识用年干起六神
+    var birthGZ = '';
+    if (state.moduleId === 'fyear' && state.birthDate) {
+      var bp = state.birthDate.split('-');
+      var yr = parseInt(bp[0], 10), mo = parseInt(bp[1], 10), da = parseInt(bp[2], 10);
+      if (!isNaN(yr) && window.Lunar && window.Lunar.fromYmd) {
+        try { birthGZ = window.Lunar.fromYmd(yr, (mo || 1), (da || 1)).getYearInGanZhi(); } catch (e) { birthGZ = ''; }
+      }
+    }
+    state.birthYearGanZhi = birthGZ;
+    state.chart = LY.arrange({
+      monthGanZhi: g.month, dayGanZhi: g.day, yearGanZhi: g.ganzhiYear, hourGanZhi: g.hour, jieqi: g.jieqi,
+      solarText: '公历 ' + g.solarText, lunarText: '农历' + g.lunarText,
+      six: state.raw,
+      useYearShen: !!(m && m.useYearShen),
+      birthYearGanZhi: birthGZ
+    });
+    state.chart.gender = (state.moduleId === 'fyear') ? (state.gender || '') : '';
+    state.chart.birthDate = (state.moduleId === 'fyear') ? (state.birthDate || '') : '';
+    state.chart.beijing = g.beijing;     // 存进排盘，从记录还原时也能显示起卦时刻
+    state.beijing = g.beijing;
+    state.aiFinal = ''; state.aiStage1 = '';
+    state.curRecId = '';    // 新起一卦，反馈不再挂到上一卦的记录上
+    renderChart(state.chart);
+    $('#tossTip').textContent = '成卦：' + state.chart.ben.name;
+  }
+
+  $('#btnToss').addEventListener('click', function () {
+    if (state.tossing) return;
+    state.tossing = true; state.raw = []; onlineStep = 0;
+    $('#chartBox').classList.add('hide');
+    $('#yaoDots').querySelectorAll('i').forEach(function (i) { i.className = ''; });
+    var step = 0;
+    (function next() {
+      if (step >= 6) {
+        state.tossing = false;
+        finalizeCast();
+        return;
+      }
+      $('#tossTip').textContent = '正在摇第 ' + (step + 1) + ' 爻…';
+      shakeCoins(function (r) {
+        state.raw.push(r);
+        drawDots(state.raw);
+        step++;
+        setTimeout(next, 260);
+      });
+    })();
+  });
+
+  // ---------- 起卦之法（八法同归纳甲装卦） ----------
+  // 爻位约定：bits[0]=初爻。八卦爻自下而上（1=阳）：
+  var TRI_BITS = { qian: [1,1,1], dui: [1,1,0], li: [1,0,1], zhen: [1,0,0], xun: [0,1,1], kan: [0,1,0], gen: [0,0,1], kun: [0,0,0] };
+  var XIAN_BITS = [null, [1,1,1], [1,1,0], [1,0,1], [1,0,0], [0,1,1], [0,1,0], [0,0,1], [0,0,0]]; // 先天数：乾一兑二离三震四巽五坎六艮七坤八
+  var ZHI_ORDER = { '子': 1, '丑': 2, '寅': 3, '卯': 4, '辰': 5, '巳': 6, '午': 7, '未': 8, '申': 9, '酉': 10, '戌': 11, '亥': 12 };
+  var GUA_NAMES = [], GUA_BY_NAME = {};
+  (function () {
+    for (var k in LY.GUA64) {
+      var v = LY.GUA64[k];
+      if (v && v.name) { GUA_NAMES.push(v.name); GUA_BY_NAME[v.name] = v; }
+    }
+  })();
+  var CAST = {
+    cur: 'auto',
+    PRINCIPLE: {
+      auto: '铜钱法：三枚同摇，无背为老阴×（6）、一背为少阳（7）、二背为少阴（8）、三背为老阳○（9）；自初爻摇至上爻，老必变。装卦归京房纳甲，以月建日辰为纲。',
+      online: '同铜钱法，唯随机源取在线真随机（random.org 大气噪声）。一爻一请：每点一次向在线源取三比特计背数，成一爻（无背老阴×、一背少阳、二背少阴、三背老阳○），六次自下而上成卦；某爻在线源不可用时，该爻单独回落本机密码学随机并在进度里注明。',
+      manual: '逐爻指定阴阳老少：少阳少阴为静、老阳老阴为动，自初爻至上爻装卦。宜复盘古籍卦例或作指定研究。',
+      time: '梅花时间卦：（年支数＋农历月＋农历日）÷8 取上卦，其和再加时支数 ÷8 取下卦，四数总和 ÷6 取动爻；先天数 乾一兑二离三震四巽五坎六艮七坤八。卦体既定，仍交纳甲装卦。',
+      num1: '梅花数占·单数：以所报数 ÷8 取上卦，其数加当下时支数 ÷8 取下卦，其和 ÷6 取动爻（「数起上卦，时数配下卦」）。',
+      num2: '梅花数占·双数：第一数 ÷8 取上卦，第二数 ÷8 取下卦，两数之和加时支数 ÷6 取动爻。',
+      hanzi: '梅花字占（以字数计）：字数平分为上下两卦，不匀者少一字为上卦（天轻清）、多一字为下卦（地重浊）；总字数加时支数 ÷6 取动爻。',
+      name: '卦名起卦：定本卦与变卦，两卦阴阳相异之爻即动爻（可多爻动，动爻阴阳互变）。宜验证与研究之用。'
+    }
+  };
+  function bitsOfGua(name) {
+    var g = GUA_BY_NAME[name]; if (!g) return null;
+    return TRI_BITS[g.lower].concat(TRI_BITS[g.upper]);
+  }
+  function sumFor(bit, moving) { return moving ? (bit ? 9 : 6) : (bit ? 7 : 8); }
+  function rawFromTrigrams(nUp, nLow, mvNum) {
+    var bits = XIAN_BITS[nLow].concat(XIAN_BITS[nUp]);
+    var mi = ((mvNum - 1) % 6 + 6) % 6;
+    return bits.map(function (b, i) { return { sum: sumFor(b, i === mi) }; });
+  }
+  function lunarNums() {
+    var d = new Date();
+    var bj = new Date(d.getTime() + (d.getTimezoneOffset() + 480) * 60000);
+    var l = window.Lunar.fromDate(bj);
+    var yz = l.getYearZhi(), hz = l.getTimeZhi();
+    return { y: ZHI_ORDER[yz], m: l.getMonth(), d: l.getDay(), h: ZHI_ORDER[hz],
+      text: '农历' + l.getMonthInChinese() + '月' + l.getDayInChinese() + ' · 年支' + yz + '（' + ZHI_ORDER[yz] + '）· 时支' + hz + '（' + ZHI_ORDER[hz] + '）' };
+  }
+  function finishNonCoin(raw) {
+    if (state.tossing) return;
+    onlineStep = 0;
+    state.raw = raw;
+    $('#chartBox').classList.add('hide'); $('#chartBox').innerHTML = '';
+    drawDots(raw);
+    finalizeCast();
+  }
+  // 在线起卦：一爻一请（每次点击向在线真随机源取 3 比特），六次成卦
+  var SUM_LABEL = { 6: '老阴 ×', 7: '少阳 ⚊', 8: '少阴 ⚋', 9: '老阳 ○' };
+  function onlineBtnText() {
+    return onlineStep >= 6 ? '重 新 起 卦' : '摇 ' + posName[onlineStep] + ' 爻';
+  }
+  function localBits(n) {
+    try {
+      var buf = crypto.getRandomValues(new Uint8Array(n));
+      return Array.prototype.map.call(buf, function (x) { return x & 1; });
+    } catch (e) {
+      var a = []; for (var i = 0; i < n; i++) a.push(Math.random() < 0.5 ? 0 : 1);
+      return a;
+    }
+  }
+  function resetOnlineCast() {
+    onlineStep = 0;
+    state.raw = [];
+    var prog = $('#onlineProg'); if (prog) prog.innerHTML = '';
+    $('#yaoDots').querySelectorAll('i').forEach(function (i) { i.className = ''; });
+    $('#chartBox').classList.add('hide'); $('#chartBox').innerHTML = '';
+    $('#tossTip').textContent = '心念既定，一爻一摇，六次成卦';
+  }
+  function castOnlineYao() {
+    var btn = $('#btnCastOnline'), note = $('#onlineNote');
+    if (state.tossing) return;
+    if (onlineStep >= 6) { // 六爻已满：按此键即从头重起
+      resetOnlineCast();
+      if (btn) btn.textContent = onlineBtnText();
+      if (note) note.textContent = '已复位，可自初爻重新起卦';
+      return;
+    }
+    state.tossing = true;
+    if (btn) { btn.disabled = true; btn.textContent = '请 源 …'; }
+    var idx = onlineStep, nm = posName[idx];
+    if (note) note.textContent = '正在向在线真随机源请求 3 位比特（第 ' + (idx + 1) + ' 爻 · ' + nm + '爻）…';
+    var ctrl = new AbortController();
+    var to = setTimeout(function () { ctrl.abort(); }, 8000);
+    fetch('https://www.random.org/integers/?num=3&min=0&max=1&col=1&base=10&format=plain&rnd=new', { signal: ctrl.signal })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function (t) {
+        var bits = t.split(/\s+/).filter(function (x) { return x === '0' || x === '1'; }).map(Number);
+        if (bits.length < 3) throw new Error('比特不足');
+        return { bits: bits.slice(0, 3), src: '在线真随机（random.org 大气噪声）' };
+      })
+      .catch(function () {
+        return { bits: localBits(3), src: '在线源不可用，已回落本机密码学随机' };
+      })
+      .then(function (r) {
+        clearTimeout(to);
+        var triple = r.bits;
+        var backs = triple[0] + triple[1] + triple[2];
+        var sum = { 0: 6, 1: 7, 2: 8, 3: 9 }[backs];
+        state.raw.push({ sum: sum, coins: triple.map(function (b) { return b ? 3 : 2; }) });
+        var coins = $('#coinRow').querySelectorAll('.coin');
+        coins.forEach(function (c, i) {
+          var back = triple[i] === 1;
+          c.classList.remove('rolling');
+          c.classList.toggle('back', back);
+          c.querySelector('span').textContent = back ? '背' : '字';
+        });
+        drawDots(state.raw);
+        onlineStep++;
+        var lb = SUM_LABEL[sum];
+        var coinTxt = triple.map(function (b) { return b ? '背' : '字'; }).join('');
+        $('#tossTip').textContent = '第 ' + onlineStep + ' 爻成：' + nm + '爻 ' + lb + '（' + coinTxt + '）';
+        var prog = $('#onlineProg');
+        if (prog) {
+          prog.innerHTML += '<div class="op-row">第 <b>' + onlineStep + '</b> 爻 · ' + nm + '爻 <b>' + lb + '</b> · 三钱 <b>' + coinTxt +
+            '</b> · ' + backs + ' 背　<i>［' + r.src + '］</i></div>';
+        }
+        if (note) note.textContent = '已摇 ' + onlineStep + ' / 6 爻 · ' + r.src;
+        if (btn) { btn.disabled = false; btn.textContent = onlineBtnText(); }
+        state.tossing = false;
+        if (onlineStep >= 6) finalizeCast();
+      });
+  }
+  function castShow(cur) {
+    CAST.cur = cur;
+    $('#castGrid').querySelectorAll('.cast-btn').forEach(function (b) { b.classList.toggle('on', b.dataset.cast === cur); });
+    $('#castPrinciple').textContent = '〔起卦原理〕' + CAST.PRINCIPLE[cur];
+    var coinRowShow = (cur === 'auto' || cur === 'online');
+    $('#coinRow').style.display = coinRowShow ? '' : 'none';
+    // 在线法自有「逐爻」按钮，此处不再露出本机六摇按钮，免得误摇本机随机冒充在线源
+    $('#btnToss').style.display = (cur === 'auto') ? '' : 'none';
+    $('#tossSubTip').style.display = coinRowShow ? '' : 'none';
+    $('#tossSubTip').textContent = (cur === 'online') ? '一爻一请，六次成卦（在线真随机）' : '连摇六次，自下而上成卦';
+    var html = '';
+    if (cur === 'auto') {
+      html = '<div class="cast-row">心念既定，点下方「摇 卦」，三枚铜钱自初爻摇至上爻。</div>';
+    } else if (cur === 'online') {
+      resetOnlineCast();
+      html = '<div class="cast-row"><button class="cast-go" id="btnCastOnline">' + onlineBtnText() + '</button>' +
+        '<span class="cast-online-note" id="onlineNote">一爻一请：每点一次向在线真随机源取三比特计背数，成一爻；共摇六次，自初爻至上爻</span></div>' +
+        '<div class="cast-online-progress" id="onlineProg"></div>';
+    } else if (cur === 'manual') {
+      var names = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
+      for (var i = 0; i < 6; i++) {
+        html += '<div class="cast-yao-row"><span class="cy-name">' + names[i] + '</span><span class="cast-yao-opts" data-yao="' + i + '">' +
+          [6, 7, 8, 9].map(function (s) {
+            var lb = { 6: '老阴 ×', 7: '少阳 ⚊', 8: '少阴 ⚋', 9: '老阳 ○' }[s];
+            return '<button data-sum="' + s + '"' + (s === 7 ? ' class="on"' : '') + '>' + lb + '</button>';
+          }).join('') + '</span></div>';
+      }
+      html += '<div class="cast-row"><button class="cast-go" id="btnCastManual">定 爻 成 卦</button></div>';
+    } else if (cur === 'time') {
+      var ln = lunarNums();
+      var s1 = ln.y + ln.m + ln.d, s2 = s1 + ln.h;
+      html = '<div class="cast-time-show">' + ln.text + '</div>' +
+        '<div class="cast-row"><span class="cy-name">上卦数</span><b>' + (s1 % 8 || 8) + '</b>　<span class="cy-name">下卦数</span><b>' + (s2 % 8 || 8) + '</b>　<span class="cy-name">动爻</span><b>' + (s2 % 6 || 6) + '</b></div>' +
+        '<div class="cast-row"><button class="cast-go" id="btnCastTime">起 卦</button></div>';
+    } else if (cur === 'num1') {
+      html = '<div class="cast-row"><label>报一个数</label><input class="cast-input" id="num1Input" type="number" min="1" placeholder="如 268"></div>' +
+        '<div class="cast-row"><button class="cast-go" id="btnCastNum1">起 卦</button></div>';
+    } else if (cur === 'num2') {
+      html = '<div class="cast-row"><label>上卦之数</label><input class="cast-input" id="num2a" type="number" min="1" placeholder="如 3">' +
+        '<label>下卦之数</label><input class="cast-input" id="num2b" type="number" min="1" placeholder="如 268"></div>' +
+        '<div class="cast-row"><button class="cast-go" id="btnCastNum2">起 卦</button></div>';
+    } else if (cur === 'hanzi') {
+      html = '<div class="cast-row"><label>写一句</label><input class="cast-input" id="hzInput" style="width:210px" placeholder="如 风起于青萍之末（以字数计）"></div>' +
+        '<div class="cast-row"><button class="cast-go" id="btnCastHanzi">起 卦</button></div>';
+    } else if (cur === 'name') {
+      var opts = GUA_NAMES.map(function (n) { return '<option>' + n + '</option>'; }).join('');
+      html = '<div class="cast-row"><label>本卦</label><select class="cast-select" id="guaA">' + opts + '</select>' +
+        '<label>变卦</label><select class="cast-select" id="guaB">' + opts + '</select></div>' +
+        '<div class="cast-row"><button class="cast-go" id="btnCastName">起 卦</button></div>';
+    }
+    $('#castBody').innerHTML = html;
+  }
+  $('#castGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('.cast-btn'); if (!b) return;
+    if (state.tossing) { toast('正在起卦，请稍候'); return; }
+    castShow(b.dataset.cast);
+  });
+  $('#castBody').addEventListener('click', function (e) {
+    var ob = e.target.closest('.cast-yao-opts button');
+    if (ob) {
+      ob.parentElement.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); });
+      ob.classList.add('on');
+      return;
+    }
+    var go = e.target.closest('.cast-go'); if (!go) return;
+    var id = go.id;
+    if (id === 'btnCastOnline') { castOnlineYao(); return; }
+    if (id === 'btnCastManual') {
+      var raw = [];
+      document.querySelectorAll('.cast-yao-opts').forEach(function (g) {
+        var on = g.querySelector('button.on');
+        raw.push({ sum: on ? +on.dataset.sum : 7 });
+      });
+      if (raw.length !== 6) { toast('请为六爻各定一位'); return; }
+      finishNonCoin(raw);
+    } else if (id === 'btnCastTime') {
+      var ln = lunarNums();
+      var s1 = ln.y + ln.m + ln.d, s2 = s1 + ln.h;
+      finishNonCoin(rawFromTrigrams(s1 % 8 || 8, s2 % 8 || 8, s2 % 6 || 6));
+    } else if (id === 'btnCastNum1') {
+      var v = parseInt($('#num1Input').value, 10);
+      if (!v || v < 1) { toast('请先报一个正整数'); return; }
+      var h1 = lunarNums().h;
+      finishNonCoin(rawFromTrigrams(v % 8 || 8, (v + h1) % 8 || 8, (v + h1) % 6 || 6));
+    } else if (id === 'btnCastNum2') {
+      var va = parseInt($('#num2a').value, 10), vb = parseInt($('#num2b').value, 10);
+      if (!va || va < 1 || !vb || vb < 1) { toast('请先报两个正整数'); return; }
+      var h2 = lunarNums().h;
+      finishNonCoin(rawFromTrigrams(va % 8 || 8, vb % 8 || 8, (va + vb + h2) % 6 || 6));
+    } else if (id === 'btnCastHanzi') {
+      var t = ($('#hzInput').value || '').match(/[\u4e00-\u9fa5]/g) || [];
+      if (!t.length) { toast('请先写至少一个汉字'); return; }
+      var n = t.length, h3 = lunarNums().h;
+      var up = Math.floor(n / 2), low = n - up; // 少一字为上卦（天轻清）
+      finishNonCoin(rawFromTrigrams(up % 8 || 8, low % 8 || 8, (n + h3) % 6 || 6));
+    } else if (id === 'btnCastName') {
+      var a = bitsOfGua($('#guaA').value), b = bitsOfGua($('#guaB').value);
+      if (!a || !b) { toast('卦名未识别'); return; }
+      var diff = 0;
+      for (var i = 0; i < 6; i++) if (a[i] !== b[i]) diff++;
+      if (!diff) { toast('本变两卦相同，无动爻，请另选变卦'); return; }
+      finishNonCoin(a.map(function (bit, i) { return { sum: sumFor(bit, bit !== b[i]) }; }));
+    }
+  });
+
+  // ---------- 排盘渲染 ----------
+  function yaoLinesHTML(yaos, withShen) {
+    return yaos.slice().reverse().map(function (y) {
+      return '<div class="yr' + (y.isMoving ? ' mv' : '') + '">' +
+        (withShen ? '<span class="c-shen">' + y.liushen + '</span>' : '<span class="c-shen dim">·</span>') +
+        '<span class="c-sym">' + (y.yang ? '<i class="ln yang' + (y.isMoving ? ' m' : '') + '"></i>' : '<i class="ln yin' + (y.isMoving ? ' m' : '') + '"></i><i class="ln yin' + (y.isMoving ? ' m' : '') + '"></i>') + '</span>' +
+        '<span class="c-tag">' + ((y.mark || '') + (y.shiTag || '')) + '</span>' +
+        '<span class="c-lq ' + lqClass(y.liuqin) + '">' + y.liuqin + '</span>' +
+        '<span class="c-gz">' + y.ganzhi + '</span>' +
+        '<span class="c-wx wx-' + y.wuxing + '">' + y.wuxing + '</span>' +
+        '<span class="c-flag">' + flagText(y) + '</span>' +
+        '</div>';
+    }).join('');
+  }
+  // 对照表单元（本卦 / 变卦 各一列）；变卦列不挂徽章（动属本卦，且列窄防溢出）
+  function yaoCellHTML(y, noBadge) {
+    var tag = (y.mark || '') + (y.shiTag || '');
+    return '<div class="c-b' + (y.isMoving ? ' mv' : '') + '">' +
+      '<span class="c-sym">' + (y.yang ? '<i class="ln yang' + (y.isMoving ? ' m' : '') + '"></i>' : '<i class="ln yin' + (y.isMoving ? ' m' : '') + '"></i><i class="ln yin' + (y.isMoving ? ' m' : '') + '"></i>') + '</span>' +
+      '<span class="c-tag' + (tag ? '' : ' c-tag-empty') + '">' + tag + '</span>' +
+      '<span class="c-lq ' + lqClass(y.liuqin) + '">' + y.liuqin + '</span>' +
+      '<span class="c-gz">' + y.ganzhi + '</span>' +
+      (noBadge ? '' : yaoBadges(y)) +
+      '</div>';
+  }
+  function lqClass(lq) {
+    return { 父母: 'lq-p', 官鬼: 'lq-g', 妻财: 'lq-c', 子孙: 'lq-z', 兄弟: 'lq-b' }[lq] || '';
+  }
+  function flagText(y) {
+    var f = [];
+    if (y.wang && y.wang.level === '旺') f.push('旺');
+    if (y.wang && y.wang.level === '衰极') f.push('衰');
+    return f.join(' ');
+  }
+  function yaoBadges(y) {
+    var b = '';
+    if (y.isKong) b += '<span class="badge kong">空</span>';
+    if (y.isYuePo) b += '<span class="badge po">破</span>';
+    if (y.isMoving) b += '<span class="badge dong">' + (y.old === '阳' ? '阳动' : '阴动') + '</span>';
+    if (y.wang && y.wang.level === '旺') b += '<span class="badge wang">旺</span>';
+    return b ? '<span class="c-badges">' + b + '</span>' : '';
+  }
+  // 卦图：上卦（外，四五六爻）/ 下卦（内，一二三爻）之间拉开明显中缝；
+  // 动爻不再整根涂红（朱砂只做细框与淡底），用传统 ○（阳动）×（阴动）记号标在爻线右侧
+  function guaFigureHTML(gua) {
+    var mv = gua.__moving || [];
+    var rev = gua.six.slice().reverse();   // i=0 上爻 …… i=5 初爻
+    var rows = rev.map(function (b, i) {
+      var idx = 5 - i;                     // 还原成引擎的爻序（0=初爻）
+      var isMv = mv.indexOf(idx) >= 0;
+      var bars = b ? '<i class="ln yang"></i>'
+        : '<i class="ln yin"></i><i class="ln yin"></i>';
+      return '<div class="fig-y' + (isMv ? ' mv' : '') + '">' +
+        '<span class="fig-bars">' + bars + '</span>' +
+        '<span class="fig-mk">' + (isMv ? (b ? '○' : '×') : '') + '</span></div>';
+    });
+    return '<div class="fig">' +
+      '<div class="fig-tri">' + rows.slice(0, 3).join('') + '</div>' +
+      '<div class="fig-sep"></div>' +
+      '<div class="fig-tri">' + rows.slice(3).join('') + '</div></div>';
+  }
+
+  function gistText(chart) {
+    var m = CFG.MODULES[state.moduleId]; if (!m) return '';
+    var ysYao = chart.ben.yaos.filter(function (y) { return y.liuqin === m.yongshen; })[0];
+    if (!ysYao) return '';
+    var lvl = ysYao.wang ? ysYao.wang.level : '';
+    var tags = [];
+    if (ysYao.isShi) tags.push('持世');
+    if (ysYao.isKong) tags.push('旬空');
+    if (ysYao.isYuePo) tags.push('月破');
+    if (ysYao.isMoving) tags.push('发动');
+    if (ysYao.isRiChong) tags.push('日冲');
+    var near = '';
+    if (LY.yingqiOf) {
+      var cands = LY.yingqiOf(ysYao, chart).filter(function (c) { return c.zhi; });
+      if (cands.length) {
+        var D = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        var dz = chart.dayZhi;
+        cands.forEach(function (c) { c.days = (c.zhi === dz) ? 0 : (D.indexOf(c.zhi) - D.indexOf(dz) + 12) % 12; });
+        cands.sort(function (a, b) { return a.days - b.days; });
+        near = '最近应期：' + cands[0].zhi + '日（距今第 ' + cands[0].days + ' 天）';
+      }
+    }
+    var ym = '';
+    if (chart.useYearShen && chart.yearMing) {
+      var rel = chart.yearMing.rels.length ? chart.yearMing.rels[0] : '年命与世爻平和无冲克';
+      ym = '；年命' + chart.yearMing.ming + '：' + rel;
+    }
+    return '用神<b>' + m.yongshen + '</b>（' + ysYao.posName + '）·' + lvl + (tags.length ? ' · ' + tags.join('') : '') + (near ? '；' + near : '') + ym;
+  }
+
+  function renderChart(chart) {
+    var mvIdx = chart.moving.map(function (m) { return m.index; });
+    chart.ben.__moving = mvIdx;
+    if (chart.bian) chart.bian.__moving = mvIdx;
+    var m = CFG.MODULES[state.moduleId];
+    var html = '';
+
+    html += '<div class="plate">';
+    html += '<div class="plate-head"><span class="pt">本卦</span><span class="pg">' + chart.ben.name + '</span>' +
+      '<span class="pm">' + chart.ben.info.palaceName + '·' + chart.ben.info.element + (chart.ben.info.tag ? '·' + chart.ben.info.tag : '') + '</span></div>';
+    html += '<div class="figs">' + guaFigureHTML(chart.ben) +
+      (chart.bian ? '<div class="fig-arrow">之</div>' + guaFigureHTML(chart.bian) + '<div class="fig-label">' + chart.bian.name + '</div>' : '<div class="fig-label">静卦</div>') + '</div>';
+    // 结果前置：引擎直接算的一句速览，点 AI 前就能看懂大概
+    html += '<div class="gist">' + gistText(chart) + '</div>';
+    html += '<div class="yongshen">用神 <b>' + m.yongshen + '</b>　原神 <b>' + m.yuanshen + '</b>　忌神 <b>' + m.jishen + '</b>　仇神 <b>' + m.choushen + '</b></div>';
+
+    // 本卦 / 变卦 对照：静卦单列、有变双列
+    var hasBian = !!chart.bian;
+    var bianRev = hasBian ? chart.bian.yaos.slice().reverse() : null;
+    var cmp = '<div class="cmp"><div class="cmp-row cmp-head"><span class="c-shen">六神</span>' +
+      '<span class="c-cap">本卦 · ' + chart.ben.name + '</span>' +
+      (hasBian ? '<span class="c-cap">变卦 · ' + chart.bian.name + '</span>' : '') + '</div>';
+    chart.ben.yaos.slice().reverse().forEach(function (y, i) {
+      var by = bianRev ? bianRev[i] : null;
+      cmp += '<div class="cmp-row' + (y.isMoving ? ' mv' : '') + '">' +
+        '<span class="c-shen">' + y.liushen + '</span>' +
+        yaoCellHTML(y) + (by ? yaoCellHTML(by, true) : '') + '</div>';
+    });
+    cmp += '</div>';
+    html += cmp;
+
+    // 图例：世应空破动一眼可辨
+    html += '<div class="legend"><span class="lg"><i class="dot" style="background:#FCEBEB;border:1px solid #A32D2D"></i>世爻</span>' +
+      '<span class="lg"><i class="dot" style="background:#E6F1FB;border:1px solid #185FA5"></i>应爻</span>' +
+      '<span class="lg"><i class="dot" style="background:#FAEEDA;border:1px solid #854F0B"></i>空亡</span>' +
+      '<span class="lg"><i class="dot" style="background:#FCEBEB;border:1px solid #A32D2D"></i>月破</span>' +
+      '<span class="lg"><i class="dot" style="background:#F3E9FB;border:1px solid #7a3fb0"></i>动爻</span></div>';
+
+    // 起卦信息（折叠，默认收起）
+    html += '<details class="fold"><summary>起卦信息（月建 · 日辰 · 旬空 · 月破 · 节气）</summary><div class="fold-body">' +
+      esc(chart.solarText) + '　' + esc(chart.lunarText) + '<br>' +
+      '年 ' + esc(chart.yearGanZhi || '') + '　月 ' + chart.monthGanZhi + '　日 ' + chart.dayGanZhi +
+      (chart.hourGanZhi ? '　时 ' + chart.hourGanZhi : '') + '<br>' +
+      '旬空 <b>' + chart.xunkong.join('、') + '</b>　月破 <b>' + chart.yuepo + '</b>' +
+      (chart.jieqi ? '<br>节气 ' + chart.jieqi : '') +
+      (chart.useYearShen ? '<br>六神起自年干 <b>' + (chart.shenGanZhi ? chart.shenGanZhi.charAt(0) : '') + '</b>' +
+        (chart.birthYearGanZhi ? '　年命 <b>' + chart.birthYearGanZhi + '（纳音' + (chart.yearMing ? chart.yearMing.ming : '') + '）</b>' : '　（未填出生年，按当年太岁论年运）') : '') +
+      (chart.gender || chart.birthDate ? '<br>求测人' + (chart.gender ? ' 性别 ' + esc(chart.gender) : '') + (chart.birthDate ? ' 出生 ' + esc(chart.birthDate) : '') : '') +
+      '</div></details>';
+
+    // 伏神（折叠，默认收起，写明飞伏）
+    if (chart.ben.fu && chart.ben.fu.length) {
+      var fuRev = chart.ben.fu.slice().reverse();
+      html += '<details class="fold"><summary>伏神（' + chart.ben.info.palaceName + ' · 本宫伏神，点开见飞伏对照）</summary><div class="fold-body">' +
+        fuRev.map(function (f) {
+          return '<div class="fu-row"><span class="c-lq ' + lqClass(f.liuqin) + '">' + f.liuqin + '</span>' +
+            '<span class="c-gz">' + f.ganzhi + '</span>' +
+            '<span class="c-tag">伏于' + ['初', '二', '三', '四', '五', '上'][f.pos - 1] + '爻之下</span></div>';
+        }).join('') + '</div></details>';
+    }
+    html += '</div>';
+
+    html += '<button class="btn-main big" id="btnAi">AI 智能体解析</button>';
+    html += '<div class="sub-tip">两段串接：① 六爻助手做卦象总断　② ' + m.name + '顾问做落地方案</div>';
+
+    $('#chartBox').innerHTML = html;
+    $('#chartBox').classList.remove('hide');
+    $('#btnAi').addEventListener('click', function () {
+      // 已有解析结果（本次刚解析完，或从记录还原）则直接展示，不再重复调用大模型
+      if (state.aiFinal) {
+        switchView('res');
+        renderResult();
+        toast('已载入已有解析（点「重新解析」才会重新调用模型）');
+        return;
+      }
+      switchView('res');
+      renderResult();
+      if (hasKey()) runTwoStage();
+    });
+    $('#chartBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ---------- 解析结果（两段串接） ----------
+  function modRef() {
+    // 兜底：模块不存在时不许抛异常（异常会让解析页整页空白）
+    return CFG.MODULES[state.moduleId] || { icon: '☯', name: '（模块已失效）' };
+  }
+  function ctxCard() {
+    var m = modRef(), c = state.chart;
+    if (!c) {
+      // 记录还原时可能排盘缺失：本机存储不足时保存逻辑会裁掉 chart，只留解读正文
+      return '<div class="card ask">' +
+        '<div class="ask-line"><span class="k">事项</span>' + m.icon + ' ' + esc(m.name) + '</div>' +
+        '<div class="ask-line"><span class="k">问事</span>' + esc(CFG.situationText(state.text, state.moduleId)) + '</div>' +
+        '<div class="ask-line"><span class="k">卦象</span>排盘数据缺失　' + esc(state.guaText || '') + '</div>' +
+        '<div class="ask-line"><span class="k">日期</span>' + esc(state.solarText || state.beijing || '未知') + '</div>' +
+        '</div>' +
+        '<div class="card note">此记录未保存排盘明细（本机存储空间不足时会被裁剪），下面只还原当时的解读原文。若需要重新看盘或重新推演，请回到起卦页另起一卦。</div>';
+    }
+    return '<div class="card ask">' +
+      '<div class="ask-line"><span class="k">事项</span>' + m.icon + ' ' + esc(m.name) + '</div>' +
+        '<div class="ask-line"><span class="k">问事</span>' + esc(CFG.situationText(state.text, state.moduleId)) + '</div>' +
+        '<div class="ask-line"><span class="k">卦象</span>' + c.ben.name + (c.bian ? ' 之 ' + c.bian.name : '') +
+      '　世' + c.ben.info.shi + '应' + c.ben.info.ying + '　' + c.ben.info.palaceName + '</div>' +
+      '<div class="ask-line"><span class="k">日历</span>' + esc(c.solarText) + '　' + esc(c.lunarText) +
+      '　月建' + c.monthGanZhi + '　日辰' + c.dayGanZhi + '</div>' +
+      '</div>';
+  }
+  // AI 解析上方的「卦象排盘」：把断卦依据（卦名、六爻、六亲、四柱、北京时间）完整摆在正文前面，
+  // 免得读解析时还要翻回起卦页对照
+  function guaBriefCard() {
+    var c = state.chart, m = modRef();
+    if (!c) return '';
+    var mvIdx = (c.moving || []).map(function (x) { return x.index; });
+    c.ben.__moving = mvIdx;
+    if (c.bian) c.bian.__moving = mvIdx;
+    var BOT = ['初', '二', '三', '四', '五', '上'];
+    var benRev = c.ben.yaos.slice().reverse();
+    var bianRev = c.bian ? c.bian.yaos.slice().reverse() : null;
+    var rows = benRev.map(function (y, i) {
+      var by = bianRev ? bianRev[i] : null;
+      return '<div class="cmp-row' + (y.isMoving ? ' mv' : '') + '">' +
+        '<span class="c-shen' + (y.liushen ? '' : ' dim') + '">' + (y.liushen || '—') + '</span>' +
+        yaoCellHTML(y) + (by ? yaoCellHTML(by, true) : '') + '</div>';
+    }).join('');
+    var mvTxt = mvIdx.length
+      ? mvIdx.map(function (i) { return BOT[i] + '爻'; }).join('、')
+      : '静卦，无动爻';
+    var bj = state.beijing || c.beijing || '';
+    var four = [c.yearGanZhi ? '年 ' + c.yearGanZhi : '', '月 ' + c.monthGanZhi, '日 ' + c.dayGanZhi,
+      c.hourGanZhi ? '时 ' + c.hourGanZhi : ''].filter(function (s) { return s; }).join('　');
+    return '<div class="card gbrief">' +
+      '<div class="gb-head">' +
+        '<span class="gb-t">卦象排盘</span>' +
+        '<span class="gb-name">' + esc(c.ben.name) + (c.bian ? ' 之 ' + esc(c.bian.name) : '（静卦）') + '</span>' +
+        '<span class="gb-sub">' + esc(c.ben.info.palaceName) + '宫 · ' + esc(c.ben.info.element) +
+          '　世' + c.ben.info.shi + ' 应' + c.ben.info.ying + '</span>' +
+      '</div>' +
+      '<div class="gb-meta">' +
+        '<div>起卦时间：<b>' + esc(bj || c.solarText || '') + '</b>' + (c.lunarText ? '　' + esc(c.lunarText) : '') + '</div>' +
+        '<div>四柱：<b>' + esc(four) + '</b>　旬空 <b>' + (c.xunkong || []).join('、') + '</b>　月破 <b>' + esc(c.yuepo || '') + '</b>' +
+          (c.jieqi ? '　节气 ' + esc(c.jieqi) : '') + '</div>' +
+        '<div>动爻：<b>' + esc(mvTxt) + '</b>　用神 <b>' + esc(m.yongshen || '') + '</b></div>' +
+      '</div>' +
+      '<div class="cmp">' +
+        '<div class="cmp-row cmp-head"><span class="c-shen">六神</span>' +
+        '<span class="c-cap">本卦 · ' + esc(c.ben.name) + '</span>' +
+        (c.bian ? '<span class="c-cap">变卦 · ' + esc(c.bian.name) + '</span>' : '') + '</div>' +
+        rows +
+      '</div>' +
+      '<div class="gb-foot">排盘自上而下（上爻在上、初爻在下）；○阳动 ×阴动，「空」为旬空、「破」为月破</div>' +
+      '</div>';
+  }
+  function stageBar(cur) {
+    var m = modRef();
+    function st(i, txt) {
+      var cls = cur > i ? ' done' : (cur === i ? ' run' : '');
+      return '<span class="st' + cls + '">' + txt + '</span>';
+    }
+    return '<div class="steps-bar">' + st(1, '① 卦象总断') + '<i class="arw">›</i>' +
+      st(2, '② ' + m.name + '深化') + '</div>';
+  }
+  function noKeyCard() {
+    return '<div class="card nokey">' +
+      '<div class="nk-t">尚未配置大模型</div>' +
+      '<p class="nk-p">本小程序采用两段式解析：先用「六爻助手」提示词对排盘做卦象总断，再把总断结果连同该模块的专属提示词交给「' +
+      esc(modRef().name) + '顾问」深化成落地方案。两段都调用大模型，因此需要先配置接口。</p>' +
+      '<button class="btn-main" id="btnGoSet">去设置</button>' +
+      '</div>';
+  }
+  function tailBlocks() {
+    var html = '';
+    if (state.aiStage1) {
+      html += '<details class="card fold"><summary>幕后：第一阶段「卦象总断」原文</summary>' +
+        '<div class="ai-out">' + esc(state.aiStage1) + '</div></details>';
+    }
+    html += '<div class="card note">以上由「六爻助手 + ' + esc(modRef().name) + '顾问」两段提示词依次推演，属决策辅助与文化参考，不构成医疗、法律或财务建议。</div>';
+    html += fbRowHTML();
+    html += '<button class="btn-main" id="btnSave">' + (state.curRecId && findRecIdx(state.curRecId) >= 0 ? '已保存 ✓' : '保存此卦') + '</button>';
+    return html;
+  }
+  // ---------- 应验反馈 ----------
+  // 反馈必须挂在记录对象上（rec.feedback），而不是另存一个字典——
+  // 只有挂在记录上，它才会跟着记录同步到云端；否则永远只在本机，换设备就没了。
+  // 等级与 server/app/feedback.py 的 LEVEL_NAMES 一一对应，改一边必须同步改另一边。
+  var FB_LEVELS = [
+    { v: 4, t: '完全应验', d: '说的就是后来发生的' },
+    { v: 3, t: '基本应验', d: '主要说中，细节有出入' },
+    { v: 2, t: '大致应验', d: '方向沾边，细节不符' },
+    { v: 1, t: '未应验', d: '与事实相反' },
+    { v: 5, t: '未到应期', d: '还没到兑现的时候，不计入准头' }
+  ];
+  function fbName(v) {
+    v = +v;
+    for (var i = 0; i < FB_LEVELS.length; i++) if (FB_LEVELS[i].v === v) return FB_LEVELS[i].t;
+    return '';
+  }
+  function fbOf(rec) { return (rec && rec.feedback && rec.feedback.level) ? rec.feedback : null; }
+  function findRecIdx(id) {
+    var l = getHistory();
+    for (var i = 0; i < l.length; i++) if (l[i].id === id) return i;
+    return -1;
+  }
+  // 旧版把反馈存在独立字典里，按「模块|卦名|起卦时间」匹配回记录，之后删掉字典
+  function migrateLegacyFeedback() {
+    var old = null;
+    try { old = JSON.parse(store.get('wy_feedback') || '{}'); } catch (e) { return 0; }
+    var keys = Object.keys(old || {});
+    if (!keys.length) return 0;
+    var NAME2V = { '应验': 4, '部分应验': 3, '未应验': 1, '未到应期': 5 };
+    var list = getHistory(), n = 0;
+    keys.forEach(function (k) {
+      var p = String(k).split('|');
+      var v = NAME2V[old[k]];
+      if (!v) return;
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i];
+        if (r.feedback) continue;
+        if (r.moduleId === p[0] && (r.gua || '').indexOf(p[1] || '') === 0 && (r.beijing || '') === (p[2] || '')) {
+          r.feedback = { level: v, note: '', at: Date.now(), legacy: true };
+          r.updatedAt = Date.now();
+          if (window.WYCloud) window.WYCloud.markDirty(r);
+          n++;
+          break;
+        }
+      }
+    });
+    if (n) {
+      try { store.set('wy_records', JSON.stringify(list)); } catch (e) { /* 满了就丢掉迁移 */ }
+      cloudSyncSoon();
+    }
+    store.remove('wy_feedback');
+    return n;
+  }
+  function setRecordFeedback(id, level, note) {
+    var list = getHistory(), idx = -1;
+    if (id && id.charAt(0) === '#') idx = +id.slice(1);   // 老记录没 id，用下标兜底
+    else for (var k = 0; k < list.length; k++) if (list[k].id === id) { idx = k; break; }
+    var r = list[idx];
+    if (!r) return false;
+    if (!r.id) { r.id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+    r.feedback = { level: +level, note: String(note || '').slice(0, 500), at: Date.now() };
+    r.updatedAt = Date.now();
+    try { store.set('wy_records', JSON.stringify(list)); }
+    catch (e) { return false; }
+    if (window.WYCloud) window.WYCloud.markDirty(r);
+    cloudSyncSoon();
+    return r.id;
+  }
+  // 结果页用的反馈条：有反馈显示当前值和「改」，没有则给五个等级按钮
+  function fbRowHTML() {
+    var id = state.curRecId || '';
+    var rec = id ? getHistory()[findRecIdx(id)] : null;
+    var f = fbOf(rec);
+    var h = '<div class="card note" id="fbRow">此卦后续应验了吗？' +
+      (f ? '<i class="tag-ai fb-ok">已记录：' + esc(fbName(f.level)) + '</i>' : '');
+    if (f) {
+      h += '<div class="q-hint">' + (f.note ? '备注：' + esc(f.note) + '　' : '') +
+        '<span class="fb-btn" data-fbopen="' + esc(id) + '">改一下</span></div>';
+    } else {
+      h += '<div class="fb-line">' + FB_LEVELS.map(function (x) {
+        return '<span class="fb-btn" data-fblevel="' + x.v + '" title="' + esc(x.d) + '">' + x.t + '</span>';
+      }).join('') + '</div>' +
+        '<div class="q-hint">点一下会先把这卦存入记录，反馈跟着记录走——登录后自动同步到云端</div>';
+    }
+    return h + '</div>';
+  }
+  // ---------- 反馈弹层（结果页与历史共用一套） ----------
+  function recById(id) {
+    if (!id) return null;
+    var list = getHistory();
+    if (id.charAt(0) === '#') return list[+id.slice(1)] || null;
+    var i = findRecIdx(id);
+    return i < 0 ? null : list[i];
+  }
+  var fbPick = 0;
+  function openFb(id) {
+    var rec = recById(id);
+    if (!rec) { toast('找不到这条记录'); return; }
+    var f = fbOf(rec);
+    fbPick = f ? +f.level : 0;
+    $('#fbTarget').value = id;
+    $('#fbSub').textContent = (rec.gua || '') + '　' + (rec.text || '（未填写）');
+    $('#fbNote').value = f ? (f.note || '') : '';
+    $('#fbOpts').innerHTML = FB_LEVELS.map(function (x) {
+      return '<span class="fb-btn fb-opt' + (x.v === fbPick ? ' on' : '') + '" data-fbv="' + x.v + '">' +
+        x.t + '<i>' + esc(x.d) + '</i></span>';
+    }).join('');
+    $('#fbMask').classList.add('show');
+  }
+  function closeFb() { $('#fbMask').classList.remove('show'); }
+  function submitFb() {
+    var id = $('#fbTarget').value;
+    if (!fbPick) { toast('先选一个等级'); return; }
+    if (!setRecordFeedback(id, fbPick, $('#fbNote').value)) { toast('保存失败：本机存储已满'); return; }
+    closeFb();
+    toast('已记录：' + fbName(fbPick));
+    renderHistory();
+    var row = $('#fbRow');
+    if (row) row.outerHTML = fbRowHTML();
+  }
+  // 总断缓存：同一卦 + 同一四柱 + 同一模块 + 同一动爻组，第一阶段结果确定，可复用
+  function stage1CacheKey() {
+    var c = state.chart; if (!c) return '';
+    return [state.moduleId, c.ben.name, c.bian ? c.bian.name : '-',
+      c.yearGanZhi || '', c.monthGanZhi || '', c.dayGanZhi || '', c.hourGanZhi || '',
+      (c.moving || []).map(function (m) { return m.pos; }).join('')].join('|');
+  }
+  function getStage1Cache() {
+    try { return JSON.parse(store.get('wy_t1cache') || '{}'); } catch (e) { return {}; }
+  }
+  // ---------- 大模型输出 · 国风文档渲染 ----------
+  // 把模型的纯文本（markdown-ish）输出渲染成国风解读文档；不改模型输出，轴锁读原始文本不受影响。
+  function renderJyDoc(src) {
+    if (!src) return '';
+    var lines = String(src).replace(/\r\n/g, '\n').split('\n');
+    var out = [], buf = [], firstDone = false;
+    function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function inline(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>'); }
+    function isHead(l){ return /^(#{1,3}\s+|【[一二三四五六七八九十]+[、.]\s*|第[一二三四五六七八九十]+步[：:])/.test(l); }
+    function headText(l){ return l.replace(/^#{1,3}\s+/,'').replace(/^【/,'').replace(/】$/,'').trim(); }
+    function flush(){
+      if (!buf.length) return;
+      var t = buf.join('<br>'); buf = [];
+      if (!firstDone) { firstDone = true; out.push('<div class="jy-verdict"><span class="jy-tag">卦象结论</span>'+t+'</div>'); }
+      else if (/理性提示|AI\s*生成|仅供参考|不构成/.test(t)) { out.push('<div class="jy-note">'+t+'</div>'); }
+      else { out.push('<p>'+t+'</p>'); }
+    }
+    for (var i=0;i<lines.length;i++){
+      var l = lines[i];
+      if (/^>\s?/.test(l)) {
+        flush(); var q=[];
+        while (i<lines.length && /^>\s?/.test(lines[i])) { q.push(lines[i].replace(/^>\s?/,'')); i++; }
+        out.push('<div class="jy-verdict"><span class="jy-tag">一句话结论</span>'+inline(q.join('<br>'))+'</div>'); firstDone=true; continue;
+      }
+      if (/^\s*[-*]\s+/.test(l)) {
+        flush(); var ul=[];
+        while (i<lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+          var it=lines[i].replace(/^\s*[-*]\s+/,''); var mm=it.match(/^([^：:]+)[：:]\s*(.*)$/);
+          ul.push(mm ? '<li><b>'+inline(mm[1])+'</b>'+inline(mm[2])+'</li>' : '<li>'+inline(it)+'</li>'); i++;
+        }
+        out.push('<ul class="jy-ul">'+ul.join('')+'</ul>'); continue;
+      }
+      if (/^\s*\d+[.、]\s+/.test(l)) {
+        flush(); var ol=[];
+        while (i<lines.length && /^\s*\d+[.、]\s+/.test(lines[i])) { ol.push('<li>'+inline(lines[i].replace(/^\s*\d+[.、]\s+/,''))+'</li>'); i++; }
+        out.push('<ol class="jy-todo">'+ol.join('')+'</ol>'); continue;
+      }
+      if (/^\s*(---|\*\*\*|___)\s*$/.test(l)) { flush(); out.push('<div class="jy-divider"></div>'); continue; }
+      if (isHead(l)) { flush(); out.push('<h3 class="jy-h2">'+inline(headText(l))+'</h3>'); continue; }
+      if (l.trim()==='') { flush(); continue; }
+      buf.push(inline(l));
+    }
+    flush();
+    return out.join('\n');
+  }
+  if (typeof window !== 'undefined') window.renderJyDoc = renderJyDoc;
+
+  function renderResult() {
+    // 兜底铁律：解析页任何一步出错都必须显示出错原因，绝不允许整页空白
+    // （历史教训：ctxCard 对 chart 直接取 .ben，记录排盘被裁剪时抛 TypeError，页面变全白且无任何提示）
+    try { return renderResultInner(); }
+    catch (e) {
+      var box = $('#resBox');
+      if (box) box.innerHTML = '<div class="card err-card"><p class="err-t">解析页渲染出错</p>' +
+        '<p class="err-m">' + esc(e && e.message ? e.message : String(e)) + '</p>' +
+        '<p class="note">该卦的排盘或解读数据残缺（多半是本机存储空间不足时被裁剪）。请回到起卦页重新起一卦。</p></div>';
+      if (window.console && console.error) console.error('renderResult:', e);
+    }
+  }
+  function renderResultInner() {
+    if (!hasKey()) {
+      $('#resBox').innerHTML = ctxCard() + guaBriefCard() + noKeyCard();
+      $('#btnGoSet').addEventListener('click', function () {
+        $('#tabbar').querySelectorAll('a').forEach(function (x) { x.classList.remove('on'); });
+        $('#tabbar').querySelector('[data-tab="set"]').classList.add('on');
+        switchView('set');
+      });
+      return;
+    }
+    if (!state.chart) {
+      // 无排盘则不能调用大模型（提示词要读排盘），只展示解读原文
+      if (state.aiFinal) {
+        $('#resBox').innerHTML = ctxCard() + guaBriefCard() +
+          '<div class="card ai-out" id="aiOut">' + renderJyDoc(state.aiFinal) + '</div>' + tailBlocks();
+      } else {
+        $('#resBox').innerHTML = ctxCard() + guaBriefCard() +
+          '<div class="card err-card"><p class="err-t">没有排盘数据</p>' +
+          '<p class="note">本次没有可用的卦象排盘，请先返回起卦页成一卦。</p></div>';
+      }
+      return;
+    }
+    if (state.aiFinal) {
+      $('#resBox').innerHTML = ctxCard() + guaBriefCard() + stageBar(3) +
+        '<div class="card ai-out" id="aiOut">' + esc(state.aiFinal) + '</div>' + tailBlocks();
+      return;
+    }
+    $('#resBox').innerHTML = ctxCard() + guaBriefCard() + stageBar(1) +
+      '<div class="card ai-out" id="aiOut"><span class="blink">① 六爻助手正在推演卦象总断…</span></div>';
+  }
+
+  // ---------- LLM 调用 ----------
+  // 本机有 Key 就直连；没填但云端存过，就走服务端代理（浏览器里不出现明文 Key）
+  function hasKey() { return !!store.get('wy_key') || cloudKeyReady(); }
+  function callLLMAuto(c, messages, onDelta) {
+    if (cloudKeyReady() && !store.get('wy_key')) return window.WYCloud.llmChat(messages, 0.7, onDelta);
+    return callLLM(c, messages, onDelta);
+  }
+  function getCfg() {
+    return {
+      base: store.get('wy_base') || '',
+      model: store.get('wy_model') || '',
+      key: store.get('wy_key') || ''
+    };
+  }
+  function callLLM(c, messages, onDelta) {
+    return fetch(c.base.replace(/\/$/, '') + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + c.key },
+      body: JSON.stringify({ model: c.model, messages: messages, temperature: 0.7, stream: true })
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.text().then(function (t) {
+          throw new Error('HTTP ' + res.status + ' ' + t.slice(0, 120));
+        });
+      }
+      if (!res.body) return res.json().then(function (j) { return j.choices[0].message.content; });
+      var reader = res.body.getReader(), dec = new TextDecoder('utf-8'), buf = '', acc = '';
+      return (function pump() {
+        return reader.read().then(function (r) {
+          if (r.done) return acc;
+          buf += dec.decode(r.value, { stream: true });
+          var parts = buf.split('\n'); buf = parts.pop();
+          parts.forEach(function (line) {
+            line = line.trim();
+            if (line.indexOf('data:') !== 0) return;
+            var payload = line.slice(5).trim();
+            if (payload === '[DONE]') return;
+            try {
+              var j = JSON.parse(payload);
+              var d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+              if (d) { acc += d; if (onDelta) onDelta(acc); }
+            } catch (e) { }
+          });
+          return pump();
+        });
+      })();
+    });
+  }
+  function runTwoStage() {
+    var c = getCfg();
+    if (!c.key) { toast('请先在设置页配置 API Key'); return; }
+    if (!state.chart) { toast('没有排盘数据，请先重新起卦'); renderResult(); return; }
+    state.aiFinal = ''; state.aiStage1 = '';
+    var t0 = Date.now();
+    var m = CFG.MODULES[state.moduleId];
+    var quick = store.get('wy_quick') === '1';
+    var ckey = stage1CacheKey();
+    var cached = (!quick && ckey) ? getStage1Cache()[ckey] : '';
+    var stage1Promise;
+    if (quick) {
+      $('#resBox').innerHTML = ctxCard() + guaBriefCard() + stageBar(2) +
+        '<div class="card ai-out" id="aiOut"><span class="blink">快速模式：' + m.name + '顾问直接断卦（省去总断）…</span></div>';
+      stage1Promise = Promise.resolve('（快速模式：未做第一阶段总断。请直接依据排盘文本自行断卦：先给出卦象总断要点——用神旺衰、日月力量结论、应期候选，再输出落地方案，不得省略依据。）');
+    } else {
+      if (cached) {
+        $('#resBox').innerHTML = ctxCard() + guaBriefCard() + stageBar(2) +
+          '<div class="card ai-out" id="aiOut"><span class="blink">② ' + m.name + '顾问正在深化方案…（卦象总断命中本机缓存，省去 ①）</span></div>';
+        stage1Promise = Promise.resolve(cached);
+      } else {
+        $('#resBox').innerHTML = ctxCard() + guaBriefCard() + stageBar(1) +
+          '<div class="card ai-out" id="aiOut"><span class="blink">① 六爻助手正在推演卦象总断…</span></div>';
+        stage1Promise = callLLMAuto(c, CFG.buildStage1Messages(state.moduleId, state.text, state.chart), function (acc) {
+          var o = $('#aiOut'); if (o) o.textContent = '① 卦象总断（生成中）…\n' + acc;
+        });
+      }
+    }
+    stage1Promise
+      .then(function (t1) {
+        state.aiStage1 = t1;
+        if (!quick && ckey && !cached) {
+          var cc = getStage1Cache(); cc[ckey] = t1;
+          var ks = Object.keys(cc); if (ks.length > 40) delete cc[ks[0]];
+          try { store.set('wy_t1cache', JSON.stringify(cc)); } catch (e) { }
+        }
+        var sec = ((Date.now() - t0) / 1000).toFixed(1);
+        $('#resBox').innerHTML = ctxCard() + guaBriefCard() + stageBar(2) +
+          '<div class="card ai-out" id="aiOut"><span class="blink">② ' + m.name + '顾问正在深化方案…' +
+          (quick ? '' : (cached ? '（总断命中缓存）' : '（总断用时 ' + sec + ' 秒）')) + '</span></div>';
+        // 轴锁：Stage2 走带校验重试的通道（用神轴反置则重试一次，仍错则显式标注）
+        return CFG.runStage2Guarded(function (msgs, onDelta) {
+          return callLLMAuto(c, msgs, onDelta);
+        }, {
+          modId: state.moduleId, userText: state.text, chart: state.chart, stage1Text: t1,
+          onDelta: function (acc) { var o = $('#aiOut'); if (o) o.textContent = acc; },
+          onRetry: function (chk) {
+            var o = $('#aiOut');
+            if (o) o.textContent = '（用神轴校验未通过：' + chk.reason + '，正在重试纠正…）';
+          }
+        }).then(function (r) {
+          state.axisCheck = { ok: r.axisOk, reason: r.axisReason, attempts: r.attempts };
+          return r.text;
+        });
+      })
+      .then(function (t2) {
+        state.aiFinal = t2;
+        var sec = ((Date.now() - t0) / 1000).toFixed(1);
+        $('#resBox').innerHTML = ctxCard() + guaBriefCard() + stageBar(3) +
+          '<div class="card ai-out" id="aiOut">' + renderJyDoc(t2) + '</div><div class="note">' + (quick ? '快速模式' : '两段') + '总耗时 ' + sec + ' 秒</div>' + tailBlocks();
+      })
+      .catch(function (err) {
+        $('#resBox').innerHTML = ctxCard() + guaBriefCard() +
+          '<div class="card err-card"><p class="err-t">调用失败</p>' +
+          '<p class="err-m">' + esc(err.message) + '</p>' +
+          '<p class="note">常见原因：Key 无效或余额不足、base URL 写错、模型名不匹配；在浏览器预览页直连时还可能是跨域限制，请用微信开发者工具打开 miniprogram 工程。</p>' +
+          '<button class="btn-main" id="btnRetry">重新解析</button></div>';
+        $('#btnRetry').addEventListener('click', function () { runTwoStage(); });
+      });
+  }
+
+  $('#resSwitch').addEventListener('click', function () {
+    if (!hasKey()) { toast('请先在设置页配置 Key'); return; }
+    runTwoStage(); toast('已重新发起两段解析');
+  });
+
+  // ---------- 导航 ----------
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var a = b.dataset.act;
+    if (a === 'back') goBackView();
+    if (a === 'toHome') switchView('home');
+    if (a === 'toDiv') switchView('div');
+  });
+  $('#tabbar').addEventListener('click', function (e) {
+    var a = e.target.closest('a'); if (!a) return;
+    var t = a.dataset.tab;
+    $('#tabbar').querySelectorAll('a').forEach(function (x) { x.classList.toggle('on', x === a); });
+    if (t === 'home') switchView('home'); else switchView('set');
+  });
+
+  // ---------- 账号与云同步 ----------
+  // 底线：没配服务地址 = 纯离线，下面这些函数全部空转，老用法一点不变
+  function CL() { return window.WYCloud || null; }
+  function cloudSyncSoon() {
+    var c = CL(); if (!c || !c.authed()) return;
+    clearTimeout(cloudSyncSoon._t);
+    cloudSyncSoon._t = setTimeout(function () { cloudSync(true); }, 800);
+  }
+  function cloudSync(silent) {
+    var c = CL(); if (!c || !c.authed()) return Promise.resolve(null);
+    return c.sync(getHistory()).then(function (res) {
+      if (!res) return null;
+      store.set('wy_records', JSON.stringify(res.merged));
+      renderHistory(); renderAcct();
+      if (!silent) toast('同步完成：上传 ' + res.pushed + ' 条，下载 ' + res.pulled + ' 条');
+      return res;
+    }).catch(function (e) {
+      if (!silent) toast('同步失败：' + (e && e.message ? e.message : '网络错误'));
+      return null;
+    });
+  }
+  function renderAcct() {
+    var c = CL(), box = $('#acctState'); if (!c || !box) return;
+    if (!c.enabled()) {
+      // 离线模式：账号表单与按钮保留可见，点了会给明确指引（藏掉按钮会让人以为「保存不了」）
+      box.textContent = '未配置服务地址：当前是纯离线模式，记录与 Key 只存本机。要注册/登录请先在上方填服务地址。';
+      ['rowUser', 'rowPwd', 'rowInvite', 'btnLogin', 'btnRegister'].forEach(function (id) {
+        var e = $('#' + id); if (e) e.classList.remove('hide');
+      });
+      ['btnSyncNow', 'btnLogout'].forEach(function (id) {
+        var e = $('#' + id); if (e) e.classList.add('hide');
+      });
+      var at2 = $('#adminTip'); if (at2) at2.classList.add('hide');
+      return;
+    }
+    var on = c.authed();
+    ['rowUser', 'rowPwd', 'rowInvite', 'btnLogin', 'btnRegister'].forEach(function (id) {
+      var e = $('#' + id); if (e) e.classList.toggle('hide', on);
+    });
+    ['btnSyncNow', 'btnLogout'].forEach(function (id) {
+      var e = $('#' + id); if (e) e.classList.toggle('hide', !on);
+    });
+    var adminTip = $('#adminTip');
+    if (adminTip) adminTip.classList.toggle('hide', !on);
+    if (on) {
+      var ts = +(store.get('wy_sync_ts') || 0);
+      var last = ts ? new Date(ts).toLocaleString('zh-CN') : '尚未同步';
+      box.textContent = '已登录：' + c.user() + '　上次同步 ' + last +
+        (state.cloudHasKey ? '　云端已存 Key，可直接解析' : '') + '　（记录与 Key 自动保存在云端）';
+    } else {
+      box.textContent = '未登录：记录与 Key 只存本机。登录后自动同步，换设备登录即可取回。';
+    }
+  }
+  function afterLogin(username) {
+    var c = CL(); if (!c) return;
+    renderAcct();
+    c.getKey().then(function (j) {
+      state.cloudHasKey = !!j.hasKey;
+      if (j.hasKey) toast('已登录，云端 Key（' + j.masked + '）可用，直接解析即可');
+      if (j.base) store.set('wy_base', j.base);
+      if (j.model) store.set('wy_model', j.model);
+      loadCfgUI(); renderAcct();
+    }).catch(function () { });
+    cloudSync(true);
+  }
+  // 点登录/注册时先把服务地址输入框同步进云端客户端（不依赖 change 事件，填完直接点按钮也能生效）
+  function syncCloudBase() {
+    var c = CL(); if (!c) return false;
+    var v = $('#cloudBase').value.trim();
+    if (v) c.setBase(v);
+    if (!c.enabled()) {
+      toast('请先填「服务地址」：本地演示填 http://127.0.0.1:8123，线上填后端域名');
+      return false;
+    }
+    return true;
+  }
+  $('#btnLogin').addEventListener('click', function () {
+    var c = CL(); if (!c) return;
+    if (!syncCloudBase()) return;
+    var u = $('#acctUser').value.trim(), p = $('#acctPwd').value.trim();
+    if (!u || !p) { toast('请填写用户名和密码'); return; }
+    c.login(u, p).then(function () { toast('登录成功'); afterLogin(u); })
+      .catch(function (e) { toast('登录失败：' + (e && e.message ? e.message : '网络错误')); });
+  });
+  $('#btnRegister').addEventListener('click', function () {
+    var c = CL(); if (!c) return;
+    if (!syncCloudBase()) return;
+    var u = $('#acctUser').value.trim(), p = $('#acctPwd').value.trim(), code = $('#acctInvite').value.trim();
+    if (!u || !p) { toast('请填写用户名和密码'); return; }
+    if (!code) { toast('注册需要邀请码'); return; }
+    c.register(u, p, code).then(function () { toast('注册成功，已自动登录'); afterLogin(u); })
+      .catch(function (e) { toast('注册失败：' + (e && e.message ? e.message : '网络错误')); });
+  });
+  $('#btnLogout').addEventListener('click', function () {
+    var c = CL(); if (!c) return;
+    c.logout(); state.cloudHasKey = false; renderAcct(); toast('已退出登录');
+  });
+  $('#btnSyncNow').addEventListener('click', function () { cloudSync(false); });
+  $('#cloudBase').addEventListener('change', function () {
+    var c = CL(); if (!c) return;
+    c.setBase($('#cloudBase').value.trim());
+    toast(c.enabled() ? '服务地址已设置' : '已清空地址，回到离线模式');
+    renderAcct();
+  });
+
+  // ---------- 设置 ----------
+  function loadCfgUI() {
+    var base = store.get('wy_base') || 'https://api.deepseek.com/v1';
+    var model = store.get('wy_model') || 'deepseek-chat';
+    $('#apiBase').value = base; $('#apiModel').value = model;
+    $('#apiKey').value = store.get('wy_key') || '';
+    $('#quickMode').value = store.get('wy_quick') || '0';
+    var cb = $('#cloudBase'); if (cb) cb.value = (window.WYCloud ? window.WYCloud.base() : '');
+    updateKeyState();
+  }
+  function cloudKeyReady() {
+    return !!(window.WYCloud && window.WYCloud.authed() && state.cloudHasKey);
+  }
+  function updateKeyState() {
+    var k = store.get('wy_key');
+    var cloudOn = cloudKeyReady();
+    var base = (k ? '当前：' + (store.get('wy_model') || '') + ' · 已配置 Key（' + k.slice(0, 6) + '***）'
+      : (cloudOn ? '当前：本机未填 Key，解析走服务端保管的那把' : '当前：未配置，使用离线引擎'));
+    if (cloudOn && !k) base += '（云端保管，本机不留明文）';
+    // 存储不可用时必须说清楚，否则用户会以为保存成功了、刷新后才发现全没了
+    $('#keyState').textContent = base + (store.ok() ? ''
+      : '　⚠ 当前运行环境无法写入本机存储（沙箱预览），配置与记录仅本页有效，刷新即失效。请用浏览器直接打开本文件或用微信开发者工具打开 miniprogram 工程。');
+  }
+  $('#apiPreset').addEventListener('change', function () {
+    var v = this.value; if (v === 'custom') return;
+    var sp = v.split('|');
+    $('#apiBase').value = sp[0]; $('#apiModel').value = sp[1];
+  });
+  $('#btnSaveKey').addEventListener('click', function () {
+    var b = $('#apiBase').value.trim(), m = $('#apiModel').value.trim(), k = $('#apiKey').value.trim();
+    store.set('wy_base', b);
+    store.set('wy_model', m);
+    store.set('wy_key', k);
+    store.set('wy_quick', $('#quickMode').value);
+    updateKeyState();
+    var c = window.WYCloud;
+    if (c && c.authed() && k) {
+      // 登录状态下顺手把 Key 交给服务端加密保管，换设备不必重填
+      c.putKey(b, m, k).then(function (j) {
+        state.cloudHasKey = !!j.hasKey;
+        toast('已保存，并已同步到云端（' + (j.masked || '') + '）');
+        updateKeyState(); renderAcct();
+      }).catch(function (e) { toast('本机已保存，云端同步失败：' + (e && e.message ? e.message : '')); });
+    } else {
+      toast('已保存');
+    }
+  });
+
+  // ---------- 应验反馈 ----------
+  function ensureRecForFeedback() {
+    // 结果页直接点等级时，这卦可能还没存过；先存一条，反馈才有地方挂（也才能上云）
+    if (state.curRecId && findRecIdx(state.curRecId) >= 0) return state.curRecId;
+    if (!state.chart) return '';
+    var before = getHistory().length;
+    doSave();
+    var list = getHistory();
+    if (list.length > before) { state.curRecId = list[0].id; return list[0].id; }
+    // 已存在同卦记录（doSave 不会去重），退回按卦+时间找
+    var gua = state.chart.ben.name + (state.chart.bian ? ' 之 ' + state.chart.bian.name : '');
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].moduleId === state.moduleId && list[i].gua === gua && (list[i].beijing || '') === (state.beijing || '')) {
+        state.curRecId = list[i].id;
+        return list[i].id;
+      }
+    }
+    return '';
+  }
+  document.addEventListener('click', function (e) {
+    var pick = e.target.closest('[data-fbv]');
+    if (pick) {
+      fbPick = +pick.dataset.fbv;
+      Array.prototype.forEach.call($('#fbOpts').children, function (el) {
+        el.classList.toggle('on', +el.dataset.fbv === fbPick);
+      });
+      return;
+    }
+    var openBtn = e.target.closest('[data-fbopen]');
+    if (openBtn) { e.stopPropagation(); openFb(openBtn.dataset.fbopen); return; }
+    var lv = e.target.closest('[data-fblevel]');
+    if (lv) {
+      var id = ensureRecForFeedback();
+      if (!id) { toast('还没有卦象，先起一卦'); return; }
+      setRecordFeedback(id, +lv.dataset.fblevel, '');
+      toast('已记录：' + fbName(+lv.dataset.fblevel) + '（点「改一下」可补充经过）');
+      var sb2 = $('#btnSave');
+      if (sb2) { sb2.textContent = '已保存 ✓'; sb2.disabled = true; }
+      renderHistory();
+      var row = $('#fbRow');
+      if (row) row.outerHTML = fbRowHTML();
+      return;
+    }
+    if (e.target.closest('#fbCancel')) { closeFb(); return; }
+    if (e.target.closest('#fbOk')) { submitFb(); return; }
+    if (e.target.id === 'fbMask') { closeFb(); return; }
+  });
+  $('#fbCancel').addEventListener('click', closeFb);
+  $('#fbOk').addEventListener('click', submitFb);
+
+  // ---------- 启动 ----------
+  renderHome();
+  loadCfgUI();
+  renderAcct();
+  // 测试钩子：jsdom 回归用，页面自身逻辑不依赖它
+  window.__wyTest = {
+    migrateLegacyFeedback: migrateLegacyFeedback,
+    feedbackStatsHTML: feedbackStatsHTML,
+    fbRowHTML: fbRowHTML,
+    FB_LEVELS: FB_LEVELS,
+    state: state,
+    viewStack: viewStack,
+    switchView: switchView
+  };
+  // 旧版反馈存在独立字典里，迁到记录上后才能同步到云端
+  migrateLegacyFeedback();
+  // 上次登录过且 token 没过期：静默同步一次，把别的设备新增的记录拉回来
+  if (window.WYCloud && window.WYCloud.authed()) afterLogin(window.WYCloud.user());
+})();
+</script>
+</body>
+</html>

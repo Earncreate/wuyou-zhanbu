@@ -1,0 +1,26 @@
+# 本地环境
+.venv/
+__pycache__/
+*.pyc
+
+# 本地数据库与密钥配置（绝不入库）
+wyzb.db
+*.db
+server/.env
+.env
+
+# 打包产物
+dist/
+
+# 测试缓存（3.7MB 卦象网页缓存，删了会自动重抓，不入库）
+tmp/cache_gua/
+
+# 消融实验的中间结果（纯历史数据，体积大且可复现）
+tmp/ablation_llm_results_prev.json
+tmp/digit_ablation_results_buggy.json
+tmp/digit_ablation_results.json
+tmp/neutral_test.json
+
+# 微信开发者工具与 node 依赖
+node_modules/
+project.private.config.json

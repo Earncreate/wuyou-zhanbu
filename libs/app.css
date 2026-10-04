@@ -1,0 +1,292 @@
+:root{
+  --bg:#EFE9DE; --paper:#F8F4EC; --card:#FFFCF6; --line:#E7DFD1;
+  --txt:#2E2822; --txt2:#6E655A; --txt3:#9A9083;
+  --red:#B33A2B; --red2:#D9534A; --green:#3F6B57; --gold:#A8802E;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+  font-size:15px;line-height:1.6}
+.app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative;
+  box-shadow:0 0 40px rgba(0,0,0,.07)}
+.view{padding:0 14px}
+.hide{display:none !important}
+.pad{height:78px}
+
+/* ---------- hero ---------- */
+.hero{padding:26px 6px 18px;text-align:center}
+.hero-title{font-size:26px;font-family:"Songti SC","STSong",serif;letter-spacing:6px;color:var(--txt)}
+.hero-sub{font-size:12.5px;color:var(--txt3);letter-spacing:2px;margin-top:6px}
+.hero-gz{margin-top:12px;display:inline-block;padding:5px 14px;border:1px solid var(--line);
+  border-radius:20px;font-size:12px;color:var(--green);background:var(--card)}
+
+.sec-label{font-size:12.5px;color:var(--txt3);letter-spacing:2px;margin:18px 2px 8px;display:flex}
+.sec-label .clear-link{margin-left:auto;cursor:pointer;color:var(--red2)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.note{font-size:12.5px;color:var(--txt2);line-height:1.75}
+.empty{color:var(--txt3);font-size:13px;text-align:center;padding:8px 0}
+
+/* ---------- 模块卡片 ---------- */
+.mod-list{display:flex;flex-direction:column;gap:10px}
+.mod-card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:14px;cursor:pointer;transition:.15s;border-left:4px solid var(--mc)}
+.mod-card:active{transform:scale(.985);background:#fff}
+.mod-icon{width:46px;height:46px;border-radius:12px;background:var(--mc2);display:flex;align-items:center;
+  justify-content:center;font-size:24px;flex:0 0 auto}
+.mod-body{flex:1;min-width:0}
+.mod-name{font-size:16.5px;font-family:"Songti SC",serif;letter-spacing:2px;color:var(--mc)}
+.mod-sub{font-size:12px;color:var(--txt3);margin-top:1px}
+.mod-desc{font-size:11.5px;color:var(--txt2);margin-top:4px;line-height:1.5}
+.mod-arrow{color:var(--txt3);font-size:20px}
+
+/* ---------- 分组标题与问事模块小卡 ---------- */
+.grp-title{font-size:12px;color:var(--txt3);margin:16px 4px 7px;letter-spacing:1px}
+.chip-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.mod-chip{padding:9px 10px;gap:9px;border-radius:11px}
+.mod-chip .mod-icon{width:34px;height:34px;font-size:17px;border-radius:9px}
+.mod-chip .mod-name{font-size:13.5px;letter-spacing:1px}
+.mod-chip .mod-sub{font-size:11px;margin-top:0}
+
+/* ---------- 应验反馈 ---------- */
+.fb-btn{display:inline-block;padding:4px 10px;margin-right:2px;border:1px solid var(--line);border-radius:10px;
+  font-size:12px;cursor:pointer;background:#fff}
+.fb-btn:active{background:var(--mc2,#eee)}
+.fb-line{margin-top:8px;line-height:2.2}
+.fb-ok{background:#E8F3E8;color:#3B7A3B;border-color:#BFD9BF}
+.rec-fb{font-style:normal;font-size:11px;color:var(--txt3);border:1px solid var(--line);border-radius:9px;
+  padding:2px 7px;white-space:nowrap;flex-shrink:0}
+.rec-fb.on{color:#3B7A3B;border-color:#BFD9BF;background:#E8F3E8}
+.fb-mask{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:80;display:none;align-items:center;justify-content:center;padding:18px}
+.fb-mask.show{display:flex}
+.fb-box{background:#FFFDF9;border:1px solid var(--line);border-radius:12px;padding:16px 15px;width:100%;max-width:340px;
+  box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.fb-title{font-size:15px;letter-spacing:1px;margin-bottom:4px}
+.fb-sub{font-size:11.5px;color:var(--txt3);margin-bottom:10px;word-break:break-all}
+.fb-opts{display:flex;flex-direction:column;gap:6px}
+.fb-opt{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin:0;text-align:left}
+.fb-opt i{font-style:normal;font-size:10.5px;color:var(--txt3)}
+.fb-opt.on{background:#FBF0E6;border-color:var(--mc,#C8A45C);color:#8A5A2B}
+.fb-opt.on i{color:#8A5A2B}
+.fb-note{width:100%;margin-top:10px;min-height:60px;border:1px solid var(--line);border-radius:8px;padding:8px;
+  font-size:12.5px;font-family:inherit;background:#fff;resize:vertical;box-sizing:border-box}
+.fb-act{display:flex;gap:8px;margin-top:12px}
+.btn-ghost{display:block;padding:13px;border:1px solid var(--line);border-radius:12px;background:#fff;
+  color:var(--txt2);font-size:14px;cursor:pointer;font-family:inherit}
+.btn-ghost:active{background:#F2EFE9}
+.fb-act .btn-main,.fb-act .btn-ghost{flex:1;margin:0}
+
+.rec-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+.rec-row:last-child{border:0}
+.rec-row b{font-size:14px;font-family:"Songti SC",serif;color:var(--txt)}
+.rec-row span{font-size:12px;color:var(--txt2)}
+.rec-row em{font-size:11px;color:var(--txt3);font-style:normal;margin-left:auto}
+.rec-row i{color:var(--txt3);font-style:normal}
+
+/* ---------- topbar ---------- */
+.topbar{display:flex;align-items:center;padding:14px 4px 10px;position:sticky;top:0;background:var(--paper);z-index:5}
+.back{font-size:15px;color:var(--txt2);cursor:pointer}
+.topbar-title{flex:1;text-align:center;font-size:16px;font-family:"Songti SC",serif;letter-spacing:3px}
+.topbar-right{font-size:13px;color:var(--red2);cursor:pointer}
+
+/* ---------- 问事输入 ---------- */
+.qa{padding:6px 14px 14px}
+.mod-head{font-size:17px;font-family:"Songti SC",serif;letter-spacing:2px;color:var(--mc);
+  padding:8px 0 2px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.mod-head-sub{font-size:11.5px;color:var(--txt3);letter-spacing:1px;margin-top:2px}
+.q-title{font-size:13.5px;color:var(--txt);margin-bottom:8px}
+.q-hint{float:right;font-size:11px;color:var(--txt3)}
+.ask-text{width:100%;box-sizing:border-box;min-height:74px;margin-top:4px;padding:10px 12px;
+  border:1px solid var(--line);border-radius:12px;background:#fff;font-size:13.5px;color:var(--txt);
+  line-height:1.7;resize:vertical;outline:none}
+.ask-text:focus{border-color:var(--mc)}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{padding:6px 12px;border:1px solid var(--line);border-radius:16px;background:#fff;
+  font-size:13px;color:var(--txt2);cursor:pointer;transition:.12s}
+.opt.on{background:var(--red);border-color:var(--red);color:#fff}
+
+/* ---------- 摇卦区 ---------- */
+.toss-stage{text-align:center;padding:18px 0 6px}
+.coin-row{display:flex;justify-content:center;gap:14px;margin-bottom:12px}
+.coin{width:56px;height:56px;border-radius:50%;background:linear-gradient(145deg,#E9C874,#C9A44C);
+  border:2px solid #A9853A;display:flex;align-items:center;justify-content:center;
+  font-size:19px;color:#6B4E1B;font-family:"Songti SC",serif;box-shadow:0 3px 8px rgba(0,0,0,.12);transition:transform .1s}
+.coin.back{background:linear-gradient(145deg,#DCDCDC,#B9B9B9);border-color:#9A9A9A;color:#555}
+.coin.rolling{animation:roll .6s linear infinite}
+@keyframes roll{0%{transform:rotateY(0) translateY(0)}25%{transform:rotateY(180deg) translateY(-10px)}
+  50%{transform:rotateY(360deg) translateY(0)}75%{transform:rotateY(540deg) translateY(-6px)}100%{transform:rotateY(720deg) translateY(0)}}
+.toss-tip{font-size:13px;color:var(--txt2);min-height:20px}
+.yao-dots{display:flex;justify-content:center;gap:9px;margin:12px 0 16px}
+.yao-dots i{width:38px;height:38px;border-radius:9px;border:1px dashed var(--line);display:flex;
+  align-items:center;justify-content:center;font-style:normal;font-size:12px;color:var(--txt3);background:var(--card)}
+.yao-dots i.yang{border-style:solid;border-color:var(--txt2);color:var(--txt)}
+.yao-dots i.yin{border-style:solid;border-color:var(--txt2);color:var(--txt)}
+.yao-dots i.mv{border-color:var(--red);color:var(--red);background:#FBF1EE}
+.btn-main{display:block;width:100%;padding:13px;border:0;border-radius:12px;background:var(--red);
+  color:#fff;font-size:16px;letter-spacing:4px;font-family:"Songti SC",serif;cursor:pointer}
+.btn-main:active{background:#982f22}
+.btn-main.big{margin-top:14px}
+.btn-main:disabled{opacity:.6}
+/* 次要按钮（登录/注册区的描边按钮） */
+.btn-line{display:block;width:100%;padding:11px;margin-top:10px;border:1px solid var(--red);border-radius:12px;
+  background:transparent;color:var(--red);font-size:15px;letter-spacing:2px;font-family:"Songti SC",serif;cursor:pointer}
+.btn-line:active{background:#FBF1EE}
+.sub-tip{text-align:center;font-size:11.5px;color:var(--txt3);margin-top:8px}
+
+/* ---------- 排盘 ---------- */
+.plate{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:6px}
+.plate-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px}
+.pt{font-size:11px;color:#fff;background:var(--txt2);padding:2px 7px;border-radius:4px}
+.pg{font-size:18px;font-family:"Songti SC",serif;letter-spacing:2px}
+.pm{font-size:11.5px;color:var(--txt3)}
+.figs{display:flex;align-items:center;justify-content:center;gap:14px;padding:14px 0 6px}
+.fig{display:inline-block;line-height:normal;text-align:left}
+.fig-tri{display:block}
+.fig-y{display:flex;align-items:center;gap:6px}
+.fig-bars{display:inline-flex;align-items:center;padding:3px 5px;border-radius:5px;border:1px solid transparent}
+.fig-mk{width:16px;font-size:15px;line-height:1;color:var(--red);font-family:"Songti SC",serif}
+/* 爻线：墨色带一点渐变与细投影，不再用纯色块 */
+.fig .ln{display:inline-block;height:7px;border-radius:2px;
+  background:linear-gradient(180deg,#443C33,#2E2823);box-shadow:0 1px 0 rgba(0,0,0,.10)}
+.fig .ln.yang{width:72px}
+.fig .ln.yin{width:30px}
+.fig .ln.yin + .ln.yin{margin-left:10px}
+/* 动爻：爻线保持墨色，朱砂只做细框＋淡底，配合右侧 ○/× 记号（○阳动 ×阴动） */
+.fig-y.mv .fig-bars{border-color:rgba(163,45,45,.5);background:linear-gradient(180deg,#FDF4F2,#FBEFEB);
+  box-shadow:0 0 0 2px rgba(163,45,45,.07)}
+.fig-y.mv .ln{background:linear-gradient(180deg,#3A332B,#241F1B)}
+/* 上卦 / 下卦 中缝：拉大间距 + 虚线，内外卦一眼可分 */
+.fig-sep{width:88px;height:1px;margin:7px 0;
+  background:repeating-linear-gradient(90deg,#CFC4B2 0 5px,transparent 5px 10px)}
+.fig-arrow{font-size:14px;color:var(--txt3);align-self:center}
+.fig-label{font-size:12px;color:var(--txt3);align-self:center;font-family:"Songti SC",serif}
+.meta{font-size:12px;color:var(--txt2);text-align:center;line-height:1.8;padding:6px 0;border-top:1px dashed var(--line)}
+.yongshen{font-size:12px;color:var(--txt2);text-align:center;padding:6px;background:#F6F1E7;border-radius:8px;margin-bottom:8px}
+.yongshen b{color:var(--red)}
+.ytable{border:1px solid var(--line);border-radius:8px;padding:4px 10px;background:#FFFDF9}
+.yr{display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px dashed #EFE8DB}
+.yr:last-child{border:0}
+.yr.mv{background:#FCF5F3}
+.c-shen{width:34px;font-size:11.5px;color:var(--green);text-align:center;flex:none}
+.c-shen.dim{color:#DDD6C8}
+.c-sym{width:80px;display:flex;align-items:center;gap:5px}
+.c-sym .ln{height:6px;border-radius:2px;background:#3A332B;display:inline-block}
+.c-sym .ln.yang{width:42px}
+.c-sym .ln.yin{width:17px}
+.c-sym .ln.m{background:var(--red)}
+.c-tag{width:26px;text-align:center;font-size:12px;color:var(--red);font-weight:600}
+.c-lq{width:38px;font-size:13px;font-family:"Songti SC",serif}
+.lq-p{color:#7B68A6}.lq-g{color:#A6422E}.lq-c{color:#A8802E}.lq-z{color:#3F6B57}.lq-b{color:#4A7CA0}
+.c-gz{width:46px;font-size:12px;color:var(--txt2);font-family:"Songti SC",serif;letter-spacing:.5px}
+.c-wx{width:20px;font-size:11.5px}
+.wx-木{color:#4F7F52}.wx-火{color:#C0392B}.wx-土{color:#A8802E}.wx-金{color:#7A8894}.wx-水{color:#3D6A8A}
+.c-flag{flex:1;text-align:right;font-size:10.5px;color:var(--txt3)}
+.plate-sub{font-size:12.5px;color:var(--txt2);margin:12px 0 6px;font-family:"Songti SC",serif}
+
+/* 结果页：AI 解析正文上方的卦象排盘摘要 */
+.gbrief{padding:12px 13px 10px}
+.gb-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.gb-t{font-family:"Songti SC",serif;font-size:13.5px;color:var(--red);border-left:3px solid var(--red);padding-left:7px;letter-spacing:1px}
+.gb-name{font-family:"Songti SC",serif;font-size:16px;letter-spacing:1px;color:var(--txt)}
+.gb-sub{font-size:11.5px;color:var(--txt3)}
+.gb-meta{margin:9px 0 2px;font-size:12px;line-height:1.95;color:var(--txt2)}
+.gb-meta b{color:var(--txt);font-weight:600}
+.gb-foot{margin-top:7px;font-size:10.5px;color:var(--txt3);line-height:1.6}
+/* 本卦 / 变卦 左右对照（列宽收紧，保证窄屏下右侧干支不被裁掉） */
+.cmp{border:1px solid var(--line);border-radius:8px;padding:4px 6px;background:#FFFDF9;margin-top:8px}
+.cmp-row{display:flex;align-items:center;gap:4px;padding:6px 2px;border-bottom:1px dashed #EFE8DB}
+.cmp-row:last-child{border:0}
+.cmp-row.mv{background:#FCF5F3}
+.cmp-head{background:#F6F1E7;border-radius:6px 6px 0 0}
+.c-cap{flex:1;text-align:center;font-size:12px;color:var(--txt2);font-family:"Songti SC",serif}
+.c-b{flex:1;display:flex;align-items:center;gap:3px;padding:0 3px;border-left:1px dashed #EFE8DB;min-width:0}
+.c-b.c-static{justify-content:center;color:#C9BFAE}
+.c-b .c-sym{width:34px;display:flex;align-items:center;gap:3px;flex:none}
+.c-b .c-sym .ln{height:6px;border-radius:2px;background:#3A332B;display:inline-block}
+.c-b .c-sym .ln.yang{width:24px}
+.c-b .c-sym .ln.yin{width:10px}
+.c-b .c-sym .ln.m{background:var(--red)}
+.c-b .c-tag{width:20px;text-align:center;font-size:11px;color:var(--red);font-weight:600;flex:none}
+.c-b .c-lq{width:34px;font-size:12px;font-family:"Songti SC",serif;flex:none}
+.c-b .c-gz{width:44px;font-size:11.5px;color:var(--txt2);font-family:"Songti SC",serif;flex:none;letter-spacing:.5px}
+.c-b .c-cs{flex:1;text-align:right;font-size:10px;color:var(--txt3)}
+
+/* 伏神 */
+.fu{margin-top:10px;background:#F6F1E7;border-radius:8px;padding:8px 12px}
+.fu-h{font-size:12px;color:var(--txt2);margin-bottom:4px;font-family:"Songti SC",serif}
+.fu-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.fu-row .c-lq{width:46px;font-size:12px;font-family:"Songti SC",serif;color:var(--green)}
+.fu-row .c-gz{width:52px;font-size:12px;color:var(--txt2);font-family:"Songti SC",serif}
+.fu-row .c-tag{margin-left:auto;font-size:11px;color:var(--txt3)}
+
+/* 分组历史 */
+.grp{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;border-left:5px solid var(--mc,#B33A2B)}
+.grp-h{display:flex;align-items:center;font-size:15px;font-family:"Songti SC",serif;color:var(--mc,#B33A2B);letter-spacing:1px}
+.grp-h .gi{margin-right:6px;font-size:18px}
+.grp-h .gc{margin-left:auto;font-size:11.5px;color:var(--txt3);font-family:sans-serif}
+.grp-list{margin-top:6px;max-height:210px;overflow-y:auto}
+.rec-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed #EFE8DB;cursor:pointer}
+.rec-row:last-child{border:0}
+.rec-fig{width:30px;flex:none;display:flex;flex-direction:column;align-items:center}
+.rec-ln{width:26px;height:3px;background:var(--txt);border-radius:2px;margin-bottom:2.5px;display:block}
+.rec-ln.n{background:transparent;position:relative}
+.rec-ln.n::before,.rec-ln.n::after{content:'';position:absolute;top:0;width:10px;height:3px;background:var(--txt);border-radius:2px}
+.rec-ln.n::before{left:0}
+.rec-ln.n::after{right:0}
+.rec-mid{flex:1;min-width:0;display:flex;flex-direction:column}
+.rec-mid .rg{font-size:14px;font-family:"Songti SC",serif;color:var(--txt)}
+.rec-mid .ra{font-size:11.5px;color:var(--txt2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:360px}
+.rec-row .rt{flex:none;width:200px;display:flex;flex-direction:column;align-items:flex-end;line-height:1.35;font-style:normal}
+.rec-row .rt-s{font-size:10.5px;color:var(--txt3)}
+.rec-row .rt-b{font-size:10px;color:var(--txt3)}
+.tag-ai{font-size:9.5px;color:var(--green);border:1px solid #BFD6C9;border-radius:4px;padding:0 4px;margin-left:5px;font-style:normal}
+.sync-tip{font-size:11px;color:var(--green);background:#F1F7F3;border:1px solid #BFD6C9;border-radius:8px;padding:6px 10px;margin-bottom:8px}
+.rec-del{flex:none;width:26px;text-align:center;color:#C0392B;font-size:15px;font-style:normal}
+
+/* ---------- 解析 ---------- */
+.ask{font-size:12.5px}
+.ask-line{display:flex;gap:8px;padding:3px 0;line-height:1.65}
+.ask-line .k{color:var(--txt3);flex:0 0 34px}
+.step .step-t{font-size:15px;font-family:"Songti SC",serif;letter-spacing:1px;color:var(--red);
+  border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px}
+.step p{font-size:13.5px;color:var(--txt);line-height:1.85;margin:6px 0}
+.step p.ind{padding-left:14px;color:var(--txt2);font-size:13px}
+.ai-out{font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word}
+.blink{color:var(--txt3);animation:bl 1.2s infinite}
+@keyframes bl{0%,100%{opacity:.35}50%{opacity:1}}
+
+/* ---------- 表单 ---------- */
+.form-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.form-row label{width:64px;font-size:13px;color:var(--txt2);flex:0 0 auto}
+.form-row input,.form-row select{flex:1;min-width:0;padding:9px 10px;border:1px solid var(--line);
+  border-radius:9px;background:#fff;font-size:13px;color:var(--txt)}
+.tip-line{font-size:11.5px;color:var(--txt3);line-height:1.6;margin:8px 0}
+
+/* ---------- 两段式解析 ---------- */
+.steps-bar{display:flex;align-items:center;gap:8px;padding:4px 2px 12px}
+.steps-bar .st{font-size:12px;color:var(--txt3);padding:4px 10px;border:1px dashed var(--line);border-radius:14px;background:var(--card)}
+.steps-bar .st.run{color:#fff;background:var(--red);border-color:var(--red);border-style:solid}
+.steps-bar .st.done{color:var(--green);border-color:#BFD6C9;border-style:solid;background:#F1F7F3}
+.steps-bar .arw{color:var(--txt3);font-style:normal;font-size:14px}
+.fold{margin-top:10px}
+.fold summary{font-size:13px;color:var(--txt2);cursor:pointer;list-style:none;outline:none}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::before{content:'\25b8 ';color:var(--txt3)}
+.fold[open] summary::before{content:'\25be '}
+.fold .ai-out{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--txt2)}
+
+.nokey{text-align:center;padding:18px 16px}
+.nk-t{font-size:15px;font-family:"Songti SC",serif;color:var(--red);margin-bottom:8px;letter-spacing:1px}
+.nk-p{font-size:12.5px;color:var(--txt2);line-height:1.8;text-align:left;margin:0 0 14px}
+.err-card .err-t{font-size:15px;color:var(--red);margin:0 0 6px;font-family:"Songti SC",serif}
+.err-card .err-m{font-size:12px;color:var(--txt2);word-break:break-all;margin:0 0 8px}
+
+/* ---------- tabbar / toast ---------- */
+.tabbar{position:fixed;bottom:0;left:0;right:0;max-width:430px;margin:0 auto;display:flex;
+  background:rgba(255,253,248,.96);border-top:1px solid var(--line);backdrop-filter:blur(6px);z-index:20}
+.tabbar a{flex:1;text-align:center;padding:8px 0 9px;font-size:11px;color:var(--txt3);text-decoration:none}
+.tabbar a span{display:block;font-size:19px;margin-bottom:1px}
+.tabbar a.on{color:var(--red)}
+.toast{position:fixed;left:50%;bottom:82px;transform:translateX(-50%) translateY(10px);background:rgba(46,40,34,.92);
+  color:#fff;font-size:13px;padding:9px 16px;border-radius:20px;opacity:0;pointer-events:none;transition:.22s;z-index:99;max-width:80%}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}

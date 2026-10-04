@@ -1,0 +1,18 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/divination/divination",
+    "pages/result/result",
+    "pages/setting/setting"
+  ],
+  "window": {
+    "backgroundColor": "#F7F3EC",
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#F7F3EC",
+    "navigationBarTitleText": "无忧占卜",
+    "navigationBarTextStyle": "black"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

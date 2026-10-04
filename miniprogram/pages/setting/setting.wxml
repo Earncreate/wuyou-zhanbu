@@ -1,0 +1,49 @@
+<view class="wrap">
+  <view class="card">
+    <view class="form-row">
+      <text class="lb">服务商</text>
+      <picker mode="selector" range="{{presetNames}}" value="{{presetIndex}}" bindchange="onPreset">
+        <view class="picker-txt">{{presetNames[presetIndex]}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="lb">接口地址</text>
+      <input value="{{base}}" placeholder="https://api.deepseek.com/v1" bindinput="onBase" />
+    </view>
+    <view class="form-row">
+      <text class="lb">模型</text>
+      <input value="{{model}}" placeholder="deepseek-chat" bindinput="onModel" />
+    </view>
+    <view class="form-row">
+      <text class="lb">API Key</text>
+      <input value="{{key}}" password placeholder="sk-..." bindinput="onKey" />
+    </view>
+    <view class="form-row">
+      <text class="lb">云代理</text>
+      <switch checked="{{useCloud}}" bindchange="onUseCloud" color="#B33A2B" />
+    </view>
+    <view class="form-row">
+      <text class="lb">云环境 ID</text>
+      <input value="{{cloudEnv}}" placeholder="如 cloud1-8gxxxxxx（云代理模式必填）" bindinput="onCloudEnv" />
+    </view>
+    <view class="tip-line">开启云代理后，请求经云函数 liuyaoProxy 转发，API Key 只存云端环境变量，客户端不再保存 Key，可避免小程序包被反编译导致密钥泄露；未开启时为直连模式，Key 与接口地址只保存在本机存储。解析分两段调用同一个模型：① 六爻助手做卦象总断，② 模块顾问深化为落地方案。</view>
+    <view class="btn-main" bindtap="save">保存</view>
+    <view class="btn-main" style="background:#6E655A" bindtap="test">测试连通性</view>
+    <view class="btn-main" style="background:#8C8378" bindtap="clear">清除配置</view>
+    <view class="tip-line">当前：{{state}}</view>
+  </view>
+
+  <view class="sec">两段式说明</view>
+  <view class="card note">
+    第一段：把排盘结果（月建日辰、旬空月破、纳甲六亲六神、世应动静）交给「六爻助手」，按《卜筮正宗》《增删卜易》的 SOP 产出卦象总断，明确用神旺衰与应期。
+    第二段：将这段总断作为已生成结论，连同原始盘面与你的选项，交给「饮食 / 运动 / 娱乐」专属顾问角色，由它深化成该领域可执行的方案。
+    这样做的好处是：卦理不因模块而漂移，模块建议又始终有卦象依据。
+  </view>
+
+  <view class="card note">
+    直连模式：小程序端通过 wx.request 调用，不受浏览器跨域限制，支持 SSE 流式返回。接口需兼容 OpenAI 的 /chat/completions 协议。
+    云代理模式：需先在微信开发者工具里对 cloudfunctions/liuyaoProxy 右键「上传并部署」，并在云开发控制台给该云函数配置环境变量 LLM_BASE 与 LLM_KEY（可选 LLM_MODEL）。云函数无法流式推送，此模式下结果一次性返回。
+    云同步：开启云代理并填写云环境 ID 后，保存的记录会同时写入云端。需先在「云开发控制台 → 数据库」新建集合 records，权限设为「仅创建者可读写」，这样每个用户只能读写自己的记录。未建集合时云端写入会失败，但本地保存不受影响。
+  </view>
+  <view class="pad" />
+</view>

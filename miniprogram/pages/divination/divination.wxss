@@ -1,0 +1,41 @@
+.wrap { padding: 0 28rpx 20rpx; }
+.q-item { padding: 24rpx; }
+.qa { background: #FFFCF6; border: 1rpx solid #E7DFD1; border-radius: 16rpx; padding: 20rpx 22rpx; margin: 12rpx 0 4rpx; }
+.q-title { font-size: 27rpx; color: #3A352E; margin-bottom: 12rpx; }
+.q-hint { font-size: 21rpx; color: #9A9083; float: right; }
+.ask-text { width: 100%; box-sizing: border-box; min-height: 140rpx; padding: 16rpx 18rpx;
+  border: 1rpx solid #E0D6C4; border-radius: 12rpx; background: #fff; font-size: 27rpx; color: #3A352E; line-height: 1.7; }
+.ask-text:focus { border-color: var(--mc); }
+.mod-head { font-size: 34rpx; font-family: "Songti SC", serif; letter-spacing: 4rpx; color: var(--mc); }
+.mod-head-sub { font-size: 23rpx; color: #9A9083; margin-top: 4rpx; }
+
+.toss { text-align: center; }
+.coin-row { display: flex; justify-content: center; padding: 10rpx 0 20rpx; }
+.coin {
+  width: 112rpx; height: 112rpx; border-radius: 50%; margin: 0 14rpx;
+  background: linear-gradient(145deg, #E9C874, #C9A44C); border: 3rpx solid #A9853A;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 38rpx; color: #6B4E1B; font-family: "Songti SC", serif;
+}
+.coin.back { background: linear-gradient(145deg, #DCDCDC, #B9B9B9); border-color: #9A9A9A; color: #555; }
+.coin.rolling { animation: roll .6s linear infinite; }
+@keyframes roll {
+  0% { transform: rotateY(0) translateY(0); }
+  25% { transform: rotateY(180deg) translateY(-16rpx); }
+  50% { transform: rotateY(360deg) translateY(0); }
+  75% { transform: rotateY(540deg) translateY(-10rpx); }
+  100% { transform: rotateY(720deg) translateY(0); }
+}
+
+.toss-tip { font-size: 26rpx; color: #6E655A; min-height: 40rpx; }
+.yao-dots { display: flex; justify-content: center; padding: 20rpx 0 26rpx; }
+.dot {
+  width: 72rpx; height: 72rpx; margin: 0 10rpx; border-radius: 14rpx;
+  border: 1rpx dashed #E7DFD1; background: #FFFCF6;
+  display: flex; align-items: center; justify-content: center;
+}
+.dot.yang, .dot.yin { border: 1rpx solid #6E655A; }
+.dot.mv { border-color: #B33A2B; background: #FBF1EE; }
+.dot .dn { font-size: 24rpx; color: #9A9083; }
+.dot .mk { font-size: 32rpx; color: #B33A2B; }
+.btn-reset { text-align: center; font-size: 25rpx; color: #D9534A; padding: 20rpx 0 0; }

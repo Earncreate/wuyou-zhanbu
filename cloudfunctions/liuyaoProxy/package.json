@@ -1,0 +1,7 @@
+{
+  "name": "liuyaoProxy",
+  "version": "1.0.0",
+  "description": "六爻占卜小程序的大模型请求代理（Key 只存云端环境变量）",
+  "main": "index.js",
+  "dependencies": {}
+}

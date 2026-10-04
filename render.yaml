@@ -1,0 +1,26 @@
+# Render Blueprint —— 必须在仓库根目录（Render 只认根目录的 render.yaml）
+# 服务代码在 server/ 下，用 rootDir 指过去，buildCommand/startCommand 即在 server/ 里执行。
+services:
+  - type: web
+    name: wyzb-sync
+    runtime: python
+    plan: free
+    region: singapore          # 离数据库近一点；免费档可改 oregon / frankfurt
+    rootDir: server             # 关键：没有这行，Render 会在仓库根找 requirements.txt 直接失败
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
+      - key: SECRET_KEY
+        sync: false             # 面板手填，必须与本地 server/.env 里那个完全一致：
+                                # 本地和线上共用同一个库，两边不一致会导致库里已加密的 API Key 解不开
+      - key: DATABASE_URL
+        sync: false             # 面板填 Supabase 的 Session pooler 连接串（不要勾同步到仓库）
+      - key: ALLOWED_ORIGINS
+        value: "*"              # 前端域名确定后改成 https://你的前端域名
+      - key: INVITE_REQUIRED
+        value: "true"
+      - key: ADMIN_USERNAMES
+        value: "root"

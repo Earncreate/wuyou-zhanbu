@@ -1,0 +1,8 @@
+const BOOK = [
+  {
+    mod: 'career', q: '占请迎父王灵柩允否',
+    mz: '辰', dz: '甲午', kong: '辰巳',
+    ben: '火天大有', bian: '离为火',
+    rows: [ // 上→下
+      { pos: 6, ganzhi: '己巳', lq: '官鬼', ying: 1 },
+      { pos

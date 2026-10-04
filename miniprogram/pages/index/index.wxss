@@ -1,0 +1,9 @@
+.wrap { padding: 0 28rpx 20rpx; }
+
+/* ---------- 分组标题与问事模块小卡 ---------- */
+.grp-title { font-size: 24rpx; color: #8a8577; margin: 30rpx 8rpx 12rpx; letter-spacing: 2rpx; }
+.chip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14rpx; }
+.mod-chip { padding: 18rpx 20rpx; gap: 16rpx; border-radius: 20rpx; }
+.mod-chip .mod-icon { width: 60rpx; height: 60rpx; font-size: 30rpx; border-radius: 16rpx; }
+.mod-chip .mod-name { font-size: 26rpx; letter-spacing: 2rpx; }
+.mod-chip .mod-sub { font-size: 20rpx; margin-top: 0; }

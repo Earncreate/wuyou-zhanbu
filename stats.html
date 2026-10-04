@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>应验统计 · 无忧占卜</title>
+<link rel="stylesheet" href="libs/app.css">
+<style>
+  body{max-width:820px;margin:0 auto;padding:18px 14px 40px}
+  .st-head{text-align:center;margin-bottom:16px}
+  .st-title{font-size:19px;letter-spacing:2px}
+  .st-sub{font-size:11.5px;color:var(--txt3);margin-top:4px}
+  .st-login{max-width:320px;margin:40px auto}
+  .st-login .lb{display:block;margin:10px 0 5px;font-size:12.5px;color:var(--txt2)}
+  .st-login input{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;
+    font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box}
+  .st-login .btn-main{margin-top:16px}
+  .st-err{color:var(--red);font-size:12px;margin-top:10px;text-align:center;min-height:16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:#FFFDF9;border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+  .kpi b{display:block;font-size:20px;color:var(--red);letter-spacing:1px}
+  .kpi span{font-size:11px;color:var(--txt3)}
+  .sec{margin-bottom:18px}
+  .sec h3{font-size:14px;letter-spacing:1px;margin:0 0 8px;padding-left:8px;border-left:3px solid var(--red)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;background:#FFFDF9}
+  th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+  th{color:var(--txt2);font-weight:600;font-size:11.5px;background:#FBF8F2}
+  td.n{text-align:right;white-space:nowrap}
+  .bar{display:flex;height:8px;border-radius:5px;overflow:hidden;background:#EFEAE1;margin:6px 0 2px}
+  .bar i{display:block;height:100%}
+  .lg{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--txt2);margin-top:4px}
+  .lg span i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px}
+  .fb-note-cell{color:var(--txt2);font-size:11.5px}
+  .tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .chip{padding:4px 10px;border:1px solid var(--line);border-radius:10px;font-size:11.5px;
+    cursor:pointer;background:#fff;color:var(--txt2)}
+  .chip.on{background:#FBF0E6;border-color:var(--mc,#C8A45C);color:#8A5A2B}
+  .empty{color:var(--txt3);font-size:12.5px;padding:14px;text-align:center}
+  .who{font-size:11.5px;color:var(--txt3);text-align:center;margin-bottom:12px}
+  .who b{color:var(--txt2);font-weight:600}
+</style>
+</head>
+<body>
+<div class="st-head">
+  <div class="st-title">应验统计</div>
+  <div class="st-sub">别人用你发的邀请码注册后，他的反馈会随记录同步到云端，在这里能看全站汇总与逐条明细</div>
+</div>
+
+<div id="loginBox" class="st-login" hidden>
+  <label class="lb">服务地址</label>
+  <input id="inBase" placeholder="https://你的后端.onrender.com">
+  <label class="lb">用户名</label>
+  <input id="inUser" placeholder="root">
+  <label class="lb">密码</label>
+  <input id="inPass" type="password" placeholder="">
+  <button class="btn-main" id="btnLogin">登录</button>
+  <div class="st-err" id="loginErr"></div>
+  <div class="st-sub" style="margin-top:14px">只有管理员账号（默认 root）能看到全站数据；普通账号登录后会改看自己的准头。</div>
+</div>
+
+<div id="panel" hidden>
+  <div class="who">当前账号 <b id="whoName"></b>　<span class="chip" id="btnRefresh">刷新</span>　<span class="chip" id="btnLogout">退出</span></div>
+  <div id="body"></div>
+</div>
+
+<script src="libs/cloud.config.js"></script>
+<script src="libs/api.js"></script>
+<!-- 只为把模块 id 翻成中文名，加载失败也不影响统计本身 -->
+<script src="libs/liuyao.js"></script>
+<script src="libs/config.js"></script>
+<script>
+(function () {
+  var CL = window.WYCloud;
+  var $ = function (s) { return document.querySelector(s); };
+  var LV = { 1: '未应验', 2: '大致应验', 3: '基本应验', 4: '完全应验', 5: '未到应期' };
+  var LVC = { 1: '#6E9B6E', 2: '#9CB86E', 3: '#D9A441', 4: '#C0522F', 5: '#A9A29A' };
+  var MODNAME = {};
+  try { if (window.CFG && window.CFG.MODULES) { for (var k in window.CFG.MODULES) MODNAME[k] = window.CFG.MODULES[k].name; } } catch (e) { }
+  var filt = 0;
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function modName(id) { return MODNAME[id] || id || '—'; }
+  function dt(ms) {
+    if (!ms) return '—';
+    var d = new Date(+ms);
+    if (isNaN(d.getTime())) return '—';
+    var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function showLogin() {
+    $('#panel').hidden = true;
+    $('#loginBox').hidden = false;
+    $('#inBase').value = CL.base() || window.WYZB_API_BASE || '';
+  }
+  function showPanel() {
+    $('#loginBox').hidden = true;
+    $('#panel').hidden = false;
+    $('#whoName').textContent = CL.user() || '';
+  }
+
+  function kpi(v, t) { return '<div class="kpi"><b>' + v + '</b><span>' + t + '</span></div>'; }
+
+  function distBar(dist) {
+    var keys = ['4', '3', '2', '1', '5'];
+    var tot = 0;
+    keys.forEach(function (k) { tot += (+dist[k] || 0); });
+    if (!tot) return '';
+    var bar = '<div class="bar">' + keys.map(function (k) {
+      var w = (+dist[k] || 0) / tot * 100;
+      return w ? '<i style="width:' + w.toFixed(1) + '%;background:' + LVC[k] + '"></i>' : '';
+    }).join('') + '</div>';
+    var lg = '<div class="lg">' + keys.map(function (k) {
+      return '<span><i style="background:' + LVC[k] + '"></i>' + LV[k] + ' ' + (+dist[k] || 0) + '</span>';
+    }).join('') + '</div>';
+    return bar + lg;
+  }
+
+  function tbl(head, rows) {
+    if (!rows.length) return '<div class="empty">暂无数据</div>';
+    return '<table><thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+  }
+
+  function renderMine(s) {
+    var o = s.overall || {};
+    var h = '<div class="sec"><h3>我自己的准头</h3><div class="grid">' +
+      kpi(s.total || 0, '我的记录') + kpi(o.feedbackCount || 0, '已反馈') +
+      kpi((o.rate || 0) + '%', '综合应验率') + kpi(o.conclusive || 0, '有结论的卦') +
+      '</div>' + distBar(o.dist || {}) + '</div>';
+    h += '<div class="sec"><h3>按模块</h3>' + tbl(
+      ['模块', '记录', '已反馈', '应验率'],
+      (s.modules || []).map(function (m) {
+        return '<tr><td>' + esc(modName(m.moduleId)) + '</td><td class="n">' + m.total + '</td>' +
+          '<td class="n">' + m.feedbackCount + '</td><td class="n">' + (m.conclusive ? m.rate + '%' : '—') + '</td></tr>';
+      })) + '</div>';
+    return h;
+  }
+
+  function renderSite(s) {
+    var o = s.overall || {};
+    var h = '<div class="sec"><h3>全站概览</h3><div class="grid">' +
+      kpi(s.users || 0, '注册用户') + kpi(s.usersWithFeedback || 0, '反馈过的用户') +
+      kpi(s.records || 0, '记录总数') + kpi(o.feedbackCount || 0, '已反馈') +
+      kpi((o.rate || 0) + '%', '全站应验率') + kpi(o.conclusive || 0, '有结论的卦') +
+      '</div>' + distBar(o.dist || {}) +
+      '<div class="st-sub" style="margin-top:8px">应验率 =（完全＋基本＋大致）÷ 有结论的卦；' +
+      '「未到应期」不代表准不准，不计入分母。</div></div>';
+
+    h += '<div class="sec"><h3>按模块</h3>' + tbl(
+      ['模块', '记录', '已反馈', '有结论', '应验率'],
+      (s.modules || []).map(function (m) {
+        return '<tr><td>' + esc(modName(m.moduleId)) + '</td><td class="n">' + m.total + '</td>' +
+          '<td class="n">' + m.feedbackCount + '</td><td class="n">' + m.conclusive + '</td>' +
+          '<td class="n">' + (m.conclusive ? m.rate + '%' : '—') + '</td></tr>';
+      })) + '</div>';
+
+    if ((s.guas || []).length) {
+      h += '<div class="sec"><h3>按卦（只看有反馈的）</h3>' + tbl(
+        ['卦', '反馈数', '应验率'],
+        s.guas.map(function (g) {
+          return '<tr><td>' + esc(g.gua) + '</td><td class="n">' + g.total + '</td>' +
+            '<td class="n">' + (g.conclusive ? g.rate + '%' : '—') + '</td></tr>';
+        })) + '</div>';
+    }
+
+    h += '<div class="sec"><h3>按用户</h3>' + tbl(
+      ['用户名', '记录', '已反馈', '应验率', '最后同步'],
+      (s.perUser || []).map(function (u) {
+        return '<tr><td>' + esc(u.username) + '</td><td class="n">' + u.total + '</td>' +
+          '<td class="n">' + u.feedbackCount + '</td><td class="n">' + (u.conclusive ? u.rate + '%' : '—') + '</td>' +
+          '<td class="n">' + dt(u.lastAt) + '</td></tr>';
+      })) + '</div>';
+    return h;
+  }
+
+  function renderDetail(d) {
+    var chips = '<div class="tools">' + [0, 4, 3, 2, 1, 5].map(function (v) {
+      return '<span class="chip' + (filt === v ? ' on' : '') + '" data-lv="' + v + '">' +
+        (v === 0 ? '全部' : LV[v]) + '</span>';
+    }).join('') + '</div>';
+    var rows = (d.items || []).map(function (x) {
+      return '<tr><td class="n">' + dt(x.at) + '</td><td>' + esc(x.username) + '</td>' +
+        '<td>' + esc(modName(x.moduleId)) + '</td><td>' + esc(x.gua) + '</td>' +
+        '<td class="fb-note-cell">' + esc(x.question || '') + '</td>' +
+        '<td style="color:' + LVC[x.level] + '">' + esc(x.levelName) + '</td>' +
+        '<td class="fb-note-cell">' + esc(x.note || '') + '</td></tr>';
+    });
+    return '<div class="sec"><h3>反馈明细（' + (d.total || 0) + ' 条）</h3>' + chips +
+      tbl(['反馈时间', '用户', '模块', '卦', '问的事', '等级', '备注'], rows) + '</div>';
+  }
+
+  async function load() {
+    $('#body').innerHTML = '<div class="empty">加载中…</div>';
+    var isAdmin = true, site = null, mine = null;
+    try { site = await CL.adminStats(); }
+    catch (e) { isAdmin = false; }
+    try { mine = await CL.myStats(); } catch (e) { }
+    var h = isAdmin ? renderSite(site) : renderMine(mine || { overall: {} });
+    if (!isAdmin) {
+      h = '<div class="empty">这个账号不是管理员，只能看自己的准头。用 root 登录可看全站。</div>' + h;
+    }
+    $('#body').innerHTML = h;
+    if (isAdmin) {
+      var d = await CL.adminFeedback({ limit: 100, level: filt });
+      $('#body').innerHTML += renderDetail(d);
+      bindChips();
+    }
+  }
+  function bindChips() {
+    Array.prototype.forEach.call(document.querySelectorAll('.chip[data-lv]'), function (c) {
+      c.addEventListener('click', function () {
+        filt = +c.dataset.lv;
+        CL.adminFeedback({ limit: 100, level: filt }).then(function (d) {
+          var old = document.querySelector('#body .sec:last-child');
+          if (old) old.outerHTML = renderDetail(d).replace(/^<div class="sec">/, '<div class="sec">');
+          bindChips();
+        });
+      });
+    });
+  }
+
+  $('#btnLogin').addEventListener('click', async function () {
+    $('#loginErr').textContent = '';
+    var b = $('#inBase').value.trim().replace(/\/+$/, '');
+    if (b) CL.setBase(b);
+    if (!CL.enabled()) { $('#loginErr').textContent = '先填服务地址'; return; }
+    try {
+      await CL.login($('#inUser').value.trim(), $('#inPass').value);
+      showPanel();
+      load();
+    } catch (e) { $('#loginErr').textContent = e && e.message ? e.message : '登录失败'; }
+  });
+  $('#btnLogout').addEventListener('click', function () { CL.logout(); showLogin(); });
+  $('#btnRefresh').addEventListener('click', load);
+
+  if (CL.authed()) { showPanel(); load(); } else { showLogin(); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<view class="wrap">
+  <view class="card">
+    <view class="mod-head" style="--mc:{{mod.color}}">{{mod.icon}} {{mod.name}}</view>
+    <view class="mod-head-sub">{{mod.sub}}</view>
+  </view>
+
+  <view class="card qa">
+    <view class="q-title">这一卦你想问的具体心事（选填，留空用默认问法）</view>
+    <textarea class="ask-text" placeholder="{{askHolder}}" value="{{userText}}" bindinput="onAskInput" maxlength="-1" auto-height />
+    <view class="q-hint">属性不再由你勾选，将由卦象总断推导后由模块顾问匹配给出。</view>
+  </view>
+
+  <view class="card toss">
+    <view class="coin-row">
+      <view wx:for="{{coins}}" wx:key="i" class="coin {{item.c}}"><text>{{item.t}}</text></view>
+    </view>
+    <view class="toss-tip">{{tip}}</view>
+    <view class="yao-dots">
+      <view wx:for="{{dots}}" wx:key="n" class="dot {{item.cls}}">
+        <text wx:if="{{item.mark}}" class="mk">{{item.mark}}</text>
+        <text wx:else class="dn">{{item.n}}</text>
+      </view>
+    </view>
+    <view class="btn-main {{tossing ? 'disabled' : ''}}" bindtap="onToss">摇 卦</view>
+    <view class="sub-tip">连摇六次，自下而上成卦</view>
+    <view class="btn-reset" bindtap="onReset">重摇</view>
+  </view>
+
+  <block wx:if="{{plate}}">
+    <view class="plate">
+      <view class="plate-head">
+        <text class="pt">本卦</text><text class="pg">{{plate.benName}}</text><text class="pm">{{plate.palace}}</text>
+      </view>
+
+      <view class="figs">
+        <view class="fig">
+          <view wx:for="{{plate.benFig}}" wx:key="pos" class="fig-row">
+            <block wx:if="{{item.yang}}"><view class="ln yang {{item.mv ? 'm' : ''}}" /></block>
+            <block wx:else><view class="ln yin {{item.mv ? 'm' : ''}}" /><view class="ln yin {{item.mv ? 'm' : ''}}" /></block>
+          </view>
+        </view>
+        <block wx:if="{{plate.hasBian}}">
+          <view class="fig-gap">之</view>
+          <view class="fig">
+            <view wx:for="{{plate.bianFig}}" wx:key="pos" class="fig-row">
+              <block wx:if="{{item.yang}}"><view class="ln yang {{item.mv ? 'm' : ''}}" /></block>
+              <block wx:else><view class="ln yin {{item.mv ? 'm' : ''}}" /><view class="ln yin {{item.mv ? 'm' : ''}}" /></block>
+            </view>
+          </view>
+        </block>
+        <view wx:else class="fig-gap">静卦</view>
+      </view>
+      <view wx:if="{{plate.hasBian}}" class="fig-label">变卦 · {{plate.bianName}}（{{plate.bianLabel}}）　变爻：{{plate.movingText}}</view>
+
+      <view class="meta">
+        {{plate.solarText}}　{{plate.lunarText}}
+        月建 {{plate.monthGanZhi}}　日辰 {{plate.dayGanZhi}}　旬空 {{plate.xunkong}}　月破 {{plate.yuepo}}
+        <block wx:if="{{plate.jieqi}}">　节气 {{plate.jieqi}}</block>
+      </view>
+      <view class="yongshen">
+        用神 <text class="ys">{{mod.ys}}</text>　原神 <text class="ys">{{mod.yuan}}</text>　忌神 <text class="ys">{{mod.ji}}</text>　仇神 <text class="ys">{{mod.chou}}</text>
+      </view>
+
+      <!-- 本卦 / 变卦 左右对照 -->
+      <view class="cmp">
+        <view class="cmp-row cmp-head">
+          <text class="c-shen">六神</text>
+          <text class="c-cap">本卦 · {{plate.benName}}</text>
+          <text class="c-cap" wx:if="{{plate.hasBian}}">变卦 · {{plate.bianName}}</text>
+          <text class="c-cap" wx:else>静卦</text>
+        </view>
+        <view wx:for="{{plate.benRows}}" wx:for-index="bi" wx:key="pos" class="cmp-row {{item.isMoving ? 'mv' : ''}}">
+          <text class="c-shen">{{item.liushen}}</text>
+          <view class="c-b">
+            <view class="c-sym">
+              <block wx:if="{{item.yang}}"><view class="ln yang {{item.isMoving ? 'm' : ''}}" /></block>
+              <block wx:else><view class="ln yin {{item.isMoving ? 'm' : ''}}" /><view class="ln yin {{item.isMoving ? 'm' : ''}}" /></block>
+            </view>
+            <text class="c-tag">{{item.mark}}{{item.shiTag}}</text>
+            <text class="c-lq">{{item.liuqin}}</text>
+            <text class="c-gz">{{item.ganzhi}}</text>
+          </view>
+          <view class="c-b" wx:if="{{plate.hasBian}}">
+            <view class="c-sym">
+              <block wx:if="{{plate.bianRows[bi].yang}}"><view class="ln yang" /></block>
+              <block wx:else><view class="ln yin" /><view class="ln yin" /></block>
+            </view>
+            <text class="c-tag">{{plate.bianRows[bi].shiTag}}</text>
+            <text class="c-lq">{{plate.bianRows[bi].liuqin}}</text>
+            <text class="c-gz">{{plate.bianRows[bi].ganzhi}}</text>
+          </view>
+          <view class="c-b c-static" wx:else>—</view>
+        </view>
+      </view>
+
+      <!-- 伏神 -->
+      <view wx:if="{{plate.fuRows.length}}" class="fu">
+        <view class="fu-h">伏神（本宫 · {{plate.palace}}）</view>
+        <view wx:for="{{plate.fuRows}}" wx:key="pos" class="fu-row">
+          <text class="c-lq">{{item.liuqin}}</text>
+          <text class="c-gz">{{item.ganzhi}}</text>
+          <text class="c-tag">{{item.posName}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="btn-main" bindtap="goResult">AI 智能体解析</view>
+    <view class="sub-tip">两段串接：① 六爻助手做卦象总断　② {{mod.name}}顾问做落地方案</view>
+  </block>
+  <view class="pad" />
+</view>
