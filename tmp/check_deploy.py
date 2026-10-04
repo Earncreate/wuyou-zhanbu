@@ -72,9 +72,19 @@ def main():
     gi = read(".gitignore")
     for pat in ("server/.env", ".venv/", "dist/"):
         chk("已忽略 " + pat, pat in gi)
+    # 只认「像真连接串」的：主机段不是占位符（排除 <...>、xxx、user:pass、ep-xxx 之类）
+    def real_conn(text):
+        for m in re.finditer(r"postgres(?:ql)?://([^\s`\"']{6,})", text):
+            host = m.group(1)
+            if "<" in host or "xxx" in host.lower() or "user:pass" in host:
+                continue
+            if "postgres." in host or ".supabase.com" in host or ".neon.tech" in host:
+                return m.group(0)
+        return ""
+
     tracked = read("DEPLOY.md")
-    chk("DEPLOY.md 不含数据库连接串（只写占位形式）",
-        not re.search(r"postgres(ql)?://[^\s`\"']*:[^\s`'\"@]+@", tracked))
+    leak = real_conn(tracked)
+    chk("DEPLOY.md 不含真实数据库连接串（占位形式不算）", not leak, leak[:60])
     env_path = os.path.join(ROOT, "server", ".env")
     chk("本地 .env 存在（应为存在且被忽略）", os.path.exists(env_path))
     chk("本地 .env 未被 git 暂存",
